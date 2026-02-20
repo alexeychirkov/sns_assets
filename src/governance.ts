@@ -1,8 +1,8 @@
-import { Principal } from "@dfinity/principal";
-import { SnsGovernanceCanister } from "@dfinity/sns";
 import type { HttpAgent } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 import type { SnsNeuron } from "@dfinity/sns";
-import type { NeuronState, SnsNeuronInfo, NeuronPermission } from "./types";
+import { SnsGovernanceCanister } from "@dfinity/sns";
+import type { NeuronPermission, NeuronState, SnsNeuronInfo } from "./types";
 import { NeuronPermissionType } from "./types";
 
 function neuronIdToHex(id: Uint8Array | number[]): string {
@@ -19,13 +19,13 @@ function resolveDissolveState(neuron: SnsNeuron): {
   const ds = neuron.dissolve_state[0];
 
   if (!ds) {
-    return { state: "dissolved", dissolveDelaySeconds: 0n };
+    return { state: "dissolved", dissolveDelaySeconds: BigInt(0) };
   }
 
   if ("DissolveDelaySeconds" in ds) {
     const delay = ds.DissolveDelaySeconds;
     return {
-      state: delay === 0n ? "dissolved" : "locked",
+      state: delay === BigInt(0) ? "dissolved" : "locked",
       dissolveDelaySeconds: delay,
     };
   }
@@ -33,7 +33,7 @@ function resolveDissolveState(neuron: SnsNeuron): {
   if ("WhenDissolvedTimestampSeconds" in ds) {
     const when = ds.WhenDissolvedTimestampSeconds;
     const nowSec = BigInt(Math.floor(Date.now() / 1000));
-    const remaining = when > nowSec ? when - nowSec : 0n;
+    const remaining = when > nowSec ? when - nowSec : BigInt(0);
     return {
       state: "dissolving",
       dissolveDelaySeconds: remaining,
@@ -41,7 +41,7 @@ function resolveDissolveState(neuron: SnsNeuron): {
     };
   }
 
-  return { state: "dissolved", dissolveDelaySeconds: 0n };
+  return { state: "dissolved", dissolveDelaySeconds: BigInt(0) };
 }
 
 /**
@@ -73,10 +73,10 @@ export async function fetchNeurons(
       permission_type: Array.from(p.permission_type) as NeuronPermissionType[],
     }));
 
-    const stakedMaturityE8s = n.staked_maturity_e8s_equivalent[0] ?? 0n;
+    const stakedMaturityE8s = n.staked_maturity_e8s_equivalent[0] ?? BigInt(0);
     const totalDisbursingMaturity = n.disburse_maturity_in_progress.reduce(
       (acc, d) => acc + d.amount_e8s,
-      0n
+      BigInt(0)
     );
     const totalMaturityE8s = n.maturity_e8s_equivalent + stakedMaturityE8s + totalDisbursingMaturity;
 

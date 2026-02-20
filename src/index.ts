@@ -25,10 +25,10 @@ const DEFAULT_CONCURRENCY = 5;
 
 function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
   const sum = (arr: SnsNeuronInfo[]) => ({
-    stakeE8s: arr.reduce((a, n) => a + n.stakeE8s, 0n),
-    maturityE8s: arr.reduce((a, n) => a + n.maturityE8s, 0n),
-    stakedMaturityE8s: arr.reduce((a, n) => a + n.stakedMaturityE8s, 0n),
-    totalMaturityE8s: arr.reduce((a, n) => a + n.totalMaturityE8s, 0n),
+    stakeE8s: arr.reduce((a, n) => a + n.stakeE8s, BigInt(0)),
+    maturityE8s: arr.reduce((a, n) => a + n.maturityE8s, BigInt(0)),
+    stakedMaturityE8s: arr.reduce((a, n) => a + n.stakedMaturityE8s, BigInt(0)),
+    totalMaturityE8s: arr.reduce((a, n) => a + n.totalMaturityE8s, BigInt(0)),
   });
   return {
     total: sum(neurons),
@@ -110,7 +110,7 @@ export async function scanPrincipal(
       const project = queue.shift()!;
 
       let neurons: SnsNeuronInfo[] = [];
-      let tokenBalance = 0n;
+      let tokenBalance = BigInt(0);
       let governanceFailed = false;
       let ledgerFailed = false;
       let errorMsg = "";
@@ -140,7 +140,7 @@ export async function scanPrincipal(
         failed.push({ project, governanceFailed, ledgerFailed, error: errorMsg });
       }
 
-      const hasAssets = neurons.length > 0 || tokenBalance > 0n;
+      const hasAssets = neurons.length > 0 || tokenBalance > BigInt(0);
       if (includeEmpty || hasAssets) {
         const cumulative = computeCumulative(neurons);
         const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
