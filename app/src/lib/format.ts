@@ -1,3 +1,5 @@
+import { secondsToDuration, type I18nSecondsToDuration } from "@dfinity/utils";
+
 export function formatTokenAmount(amount: bigint, decimals: number): string {
   if (decimals === 0) return amount.toString();
   const divisor = BigInt(10 ** decimals);
@@ -7,16 +9,24 @@ export function formatTokenAmount(amount: bigint, decimals: number): string {
   return fracStr ? `${whole}.${fracStr}` : whole.toString();
 }
 
+const i18nSecondsToDurationShort: I18nSecondsToDuration = {
+  year: "y",
+  year_plural: "y",
+  month: "mo",
+  month_plural: "mo",
+  day: "d",
+  day_plural: "d",
+  hour: "h",
+  hour_plural: "h",
+  minute: "m",
+  minute_plural: "m",
+  second: "s",
+  second_plural: "s",
+};
+
 export function formatDuration(seconds: bigint): string {
-  const s = Number(seconds);
-  if (s <= 0) return "—";
-  const years = s / (365 * 86400);
-  if (years >= 1) return `${years.toFixed(1)}y`;
-  const days = Math.floor(s / 86400);
-  if (days >= 1) return `${days}d`;
-  const hours = Math.floor(s / 3600);
-  if (hours >= 1) return `${hours}h`;
-  return `${Math.floor(s / 60)}m`;
+  if (seconds <= 0n) return "—";
+  return secondsToDuration({ seconds, i18n: i18nSecondsToDurationShort });
 }
 
 export function shortenId(hex: string): string {

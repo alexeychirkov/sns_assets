@@ -1,11 +1,5 @@
-import type { SnsProjectAssets, SnsSource } from "sns-assets";
+import type { SnsProjectAssets } from "sns-assets";
 import { formatTokenAmount, formatDuration, shortenId } from "../lib/format";
-
-const SOURCE_BADGE: Record<SnsSource, { label: string; cls: string }> = {
-  canister: { label: "Канистра", cls: "badge-canister" },
-  aggregator: { label: "Агрегатор", cls: "badge-aggregator" },
-  both: { label: "Оба источника", cls: "badge-both" },
-};
 
 interface Props {
   result: SnsProjectAssets;
@@ -31,30 +25,9 @@ export function SNSCard({ result }: Props) {
   return (
     <div className="sns-card">
       <div className="sns-card-header">
-        {project.logo ? (
-          <img
-            className="sns-logo"
-            src={project.logo}
-            alt={project.name}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="sns-logo-placeholder">{project.name.charAt(0).toUpperCase()}</div>
-        )}
+        <div className="sns-logo-placeholder">{project.name.charAt(0).toUpperCase()}</div>
         <div className="sns-card-title">
-          <div className="sns-name-row">
-            <h3 className="sns-name">{project.name}</h3>
-            <span className={`source-badge ${SOURCE_BADGE[project.source].cls}`}>
-              {SOURCE_BADGE[project.source].label}
-            </span>
-          </div>
-          {project.url && (
-            <a className="sns-url" href={project.url} target="_blank" rel="noopener noreferrer">
-              {project.url.replace(/^https?:\/\//, "")}
-            </a>
-          )}
+          <h3 className="sns-name">{project.name}</h3>
         </div>
       </div>
 

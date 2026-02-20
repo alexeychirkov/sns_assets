@@ -1,6 +1,6 @@
 import { Principal } from "@dfinity/principal";
 import { getAgent } from "./agent.js";
-import { fetchFromSources } from "./sources.js";
+import { fetchFromCanister } from "./canister.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
 import type { FetchOptions, ScanOptions, SnsProject, SnsProjectAssets } from "./types.js";
@@ -18,8 +18,6 @@ export type {
   SnsProjectAssets,
   SnsNeuronInfo,
   NeuronState,
-  SnsSource,
-  SourceMode,
 } from "./types.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -30,28 +28,27 @@ const DEFAULT_CONCURRENCY = 5;
 // ─── Phase 1: Fetch SNS project list ──────────────────────────────────────
 
 /**
- * Fetch the list of all deployed SNS projects.
+ * Fetch the list of all deployed SNS projects, including ICRC-1 token metadata.
  *
  * The returned `SnsProject[]` is **fully JSON-serializable** — persist it
  * however you like and pass it directly to `scanPrincipal` later:
  *
  * ```ts
  * // Fetch once
- * const projects = await fetchSnsProjects({ source: "both" });
+ * const projects = await fetchSnsProjects();
  * localStorage.setItem("sns", JSON.stringify(projects));
  *
  * // Restore later (no network call)
  * const projects = JSON.parse(localStorage.getItem("sns")!) as SnsProject[];
  * ```
  *
- * @param options.source     Which source(s) to query. Default: `"both"`
  * @param options.host       IC gateway host. Default: `"https://ic0.app"`
- * @param options.onProgress Called after each page is fetched
+ * @param options.onProgress Called after each batch of metadata is fetched
  */
 export async function fetchSnsProjects(options: FetchOptions = {}): Promise<SnsProject[]> {
-  const { source = "both", host = DEFAULT_HOST, onProgress } = options;
+  const { host = DEFAULT_HOST, onProgress } = options;
   const agent = await getAgent(host);
-  return fetchFromSources(source, agent, { onProgress });
+  return fetchFromCanister(agent, { onProgress });
 }
 
 // ─── Phase 2: Scan a principal against a pre-fetched list ─────────────────
@@ -122,14 +119,6 @@ export async function scanPrincipal(
 /**
  * Async-generator variant of `scanPrincipal` — yields each result as it
  * arrives, useful for streaming updates to a UI.
- *
- * ```ts
- * const projects = await fetchSnsProjects();
- *
- * for await (const item of streamPrincipal(principal, projects)) {
- *   console.log(item.project.name, item.neurons.length, item.tokenBalance);
- * }
- * ```
  */
 export async function* streamPrincipal(
   principal: Principal,
@@ -198,9 +187,6 @@ export async function* streamPrincipal(
 /**
  * Convenience wrapper that fetches the SNS list and scans a principal in one
  * call. Useful for one-off scripts where multiple principals are not needed.
- *
- * For scanning multiple principals, prefer `fetchSnsProjects` + `scanPrincipal`
- * to avoid re-fetching the list.
  */
 export async function scanSnsAssets(
   principal: Principal,

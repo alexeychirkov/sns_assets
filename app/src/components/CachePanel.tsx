@@ -1,36 +1,17 @@
 import type { ProjectCache } from "../lib/cache";
 import { cacheAgeMs, isCacheStale, CACHE_STALE_MS } from "../lib/cache";
-import type { SourceMode } from "sns-assets";
 import { formatAge } from "../lib/format";
-import { SourceSelector } from "./SourceSelector";
 
 interface Props {
   cache: ProjectCache | null;
   loadPhase: "idle" | "loading" | "error";
   loadError: string;
-  sourceMode: SourceMode;
-  onSourceChange: (m: SourceMode) => void;
   onLoad: () => void;
   onClear: () => void;
   disabled: boolean;
 }
 
-const SOURCE_LABEL: Record<SourceMode, string> = {
-  canister: "Канистра",
-  aggregator: "Агрегатор",
-  both: "Оба источника",
-};
-
-export function CachePanel({
-  cache,
-  loadPhase,
-  loadError,
-  sourceMode,
-  onSourceChange,
-  onLoad,
-  onClear,
-  disabled,
-}: Props) {
+export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disabled }: Props) {
   const isLoading = loadPhase === "loading";
   const stale = cache ? isCacheStale(cache) : false;
   const age = cache ? cacheAgeMs(cache) : 0;
@@ -49,19 +30,11 @@ export function CachePanel({
             <span className={`cache-age${stale ? " cache-stale" : ""}`}>
               {stale ? <>⚠ устарело ({formatAge(age)})</> : formatAge(age)}
             </span>
-            <span className="cache-dot">·</span>
-            <span className="cache-source">{SOURCE_LABEL[cache.source]}</span>
           </div>
         )}
       </div>
 
       <div className="cache-controls">
-        <SourceSelector
-          value={sourceMode}
-          onChange={onSourceChange}
-          disabled={isLoading || disabled}
-        />
-
         <div className="cache-buttons">
           <button className="cache-load-btn" onClick={onLoad} disabled={isLoading || disabled}>
             {isLoading ? (

@@ -1,4 +1,4 @@
-import type { SnsProject, SourceMode } from "sns-assets";
+import type { SnsProject } from "sns-assets";
 
 const CACHE_KEY = "sns_projects_v1";
 
@@ -8,7 +8,6 @@ export const CACHE_STALE_MS = 24 * 60 * 60 * 1000; // 24 hours
 export interface ProjectCache {
   projects: SnsProject[];
   fetchedAt: number; // Date.now()
-  source: SourceMode;
 }
 
 export function loadCache(): ProjectCache | null {
@@ -21,8 +20,8 @@ export function loadCache(): ProjectCache | null {
   }
 }
 
-export function saveCache(projects: SnsProject[], source: SourceMode): ProjectCache {
-  const cache: ProjectCache = { projects, fetchedAt: Date.now(), source };
+export function saveCache(projects: SnsProject[]): ProjectCache {
+  const cache: ProjectCache = { projects, fetchedAt: Date.now() };
   localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   return cache;
 }

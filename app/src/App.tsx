@@ -3,7 +3,7 @@ import type { Principal } from "@dfinity/principal";
 import "./App.css";
 
 import { fetchSnsProjects, scanPrincipal } from "sns-assets";
-import type { SnsProjectAssets, SourceMode } from "sns-assets";
+import type { SnsProjectAssets } from "sns-assets";
 
 import type { ProjectCache } from "./lib/cache";
 import { loadCache, saveCache, clearCache } from "./lib/cache";
@@ -21,7 +21,6 @@ export function App() {
   const [cache, setCache] = useState<ProjectCache | null>(() => loadCache());
   const [listPhase, setListPhase] = useState<"idle" | "loading" | "error">("idle");
   const [listError, setListError] = useState("");
-  const [sourceMode, setSourceMode] = useState<SourceMode>("both");
 
   // ─── Per-principal scan ──────────────────────────────────────────────────
   const [scanPhase, setScanPhase] = useState<ScanPhase>("idle");
@@ -36,8 +35,8 @@ export function App() {
     setListPhase("loading");
     setListError("");
     try {
-      const projects = await fetchSnsProjects({ source: sourceMode });
-      setCache(saveCache(projects, sourceMode));
+      const projects = await fetchSnsProjects();
+      setCache(saveCache(projects));
       setListPhase("idle");
     } catch (err) {
       setListError(err instanceof Error ? err.message : String(err));
@@ -98,8 +97,6 @@ export function App() {
           cache={cache}
           loadPhase={listPhase}
           loadError={listError}
-          sourceMode={sourceMode}
-          onSourceChange={setSourceMode}
           onLoad={handleLoadList}
           onClear={handleClearCache}
           disabled={isScanning}
