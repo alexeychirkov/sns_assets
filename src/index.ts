@@ -3,12 +3,7 @@ import { fetchAllSnsProjects } from "./aggregator.js";
 import { getAgent } from "./agent.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
-import type {
-  ScanOptions,
-  ScanProgress,
-  SnsProject,
-  SnsProjectAssets,
-} from "./types.js";
+import type { ScanOptions, ScanProgress, SnsProject, SnsProjectAssets } from "./types.js";
 
 export type {
   ScanOptions,
@@ -90,12 +85,8 @@ export async function scanSnsAssets(
 
   async function scanOne(project: SnsProject): Promise<SnsProjectAssets | null> {
     const [neurons, tokenBalance] = await Promise.all([
-      fetchNeurons(project.governanceCanisterId, principal, agent).catch(
-        () => []
-      ),
-      fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(
-        () => 0n
-      ),
+      fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
+      fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
     ]);
 
     const hasAssets = neurons.length > 0 || tokenBalance > 0n;
@@ -129,11 +120,7 @@ export async function scanSnsAssets(
   }
 
   // Run `concurrency` workers in parallel
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, projects.length) }, () =>
-      worker()
-    )
-  );
+  await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, () => worker()));
 
   report({ phase: "done", total, scanned });
 
@@ -194,9 +181,8 @@ export async function* streamSnsAssets(
   }
 
   // Kick off workers
-  const workerPromises = Array.from(
-    { length: Math.min(concurrency, projects.length) },
-    () => worker()
+  const workerPromises = Array.from({ length: Math.min(concurrency, projects.length) }, () =>
+    worker()
   );
 
   Promise.all(workerPromises).then(() => {

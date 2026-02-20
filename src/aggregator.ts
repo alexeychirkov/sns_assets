@@ -1,8 +1,7 @@
 import type { RawSnsProject, SnsProject } from "./types.js";
 
 /** SNS aggregator canister HTTP endpoint */
-const AGGREGATOR_BASE =
-  "https://qaa6y-5yaaa-aaaaa-aaafa-cai.raw.ic0.app/v1/snses";
+const AGGREGATOR_BASE = "https://qaa6y-5yaaa-aaaaa-aaafa-cai.raw.ic0.app/v1/snses";
 
 const PAGE_SIZE = 100;
 
@@ -19,14 +18,12 @@ export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
     const res = await fetch(url);
 
     if (!res.ok) {
-      throw new Error(
-        `SNS aggregator responded with HTTP ${res.status}: ${res.statusText}`
-      );
+      throw new Error(`SNS aggregator responded with HTTP ${res.status}: ${res.statusText}`);
     }
 
     // The aggregator may return either an array or { data: [...], total_count: N }
     const body = await res.json();
-    const page: RawSnsProject[] = Array.isArray(body) ? body : body.data ?? body.snses ?? [];
+    const page: RawSnsProject[] = Array.isArray(body) ? body : (body.data ?? body.snses ?? []);
 
     if (page.length === 0) break;
 

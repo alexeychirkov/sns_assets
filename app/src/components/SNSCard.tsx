@@ -2,9 +2,9 @@ import type { SnsProjectResult, SnsSource } from "../lib/types";
 import { formatTokenAmount, formatDuration, shortenId } from "../lib/format";
 
 const SOURCE_BADGE: Record<SnsSource, { label: string; cls: string }> = {
-  canister:   { label: "Канистра",      cls: "badge-canister" },
-  aggregator: { label: "Агрегатор",     cls: "badge-aggregator" },
-  both:       { label: "Оба источника", cls: "badge-both" },
+  canister: { label: "Канистра", cls: "badge-canister" },
+  aggregator: { label: "Агрегатор", cls: "badge-aggregator" },
+  both: { label: "Оба источника", cls: "badge-both" },
 };
 
 interface Props {
@@ -41,9 +41,7 @@ export function SNSCard({ result }: Props) {
             }}
           />
         ) : (
-          <div className="sns-logo-placeholder">
-            {project.name.charAt(0).toUpperCase()}
-          </div>
+          <div className="sns-logo-placeholder">{project.name.charAt(0).toUpperCase()}</div>
         )}
         <div className="sns-card-title">
           <div className="sns-name-row">
@@ -53,12 +51,7 @@ export function SNSCard({ result }: Props) {
             </span>
           </div>
           {project.url && (
-            <a
-              className="sns-url"
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a className="sns-url" href={project.url} target="_blank" rel="noopener noreferrer">
               {project.url.replace(/^https?:\/\//, "")}
             </a>
           )}
@@ -79,9 +72,7 @@ export function SNSCard({ result }: Props) {
 
       {hasNeurons && (
         <div className="asset-section">
-          <div className="section-label">
-            Нейроны ({neurons.length})
-          </div>
+          <div className="section-label">Нейроны ({neurons.length})</div>
           <div className="neurons-list">
             {neurons.map((n) => (
               <div key={n.id} className="neuron-row">
@@ -96,8 +87,7 @@ export function SNSCard({ result }: Props) {
                 <div className="neuron-details">
                   <span className="neuron-detail">
                     <span className="detail-label">Стейк</span>
-                    {formatTokenAmount(n.stakeE8s, project.tokenDecimals)}{" "}
-                    {project.tokenSymbol}
+                    {formatTokenAmount(n.stakeE8s, project.tokenDecimals)} {project.tokenSymbol}
                   </span>
                   {n.dissolveDelaySeconds > 0n && (
                     <span className="neuron-detail">

@@ -1,7 +1,6 @@
 import type { SnsProject } from "./types";
 
-const AGGREGATOR_BASE =
-  "https://qaa6y-5yaaa-aaaaa-aaafa-cai.raw.ic0.app/v1/snses";
+const AGGREGATOR_BASE = "https://qaa6y-5yaaa-aaaaa-aaafa-cai.raw.ic0.app/v1/snses";
 
 const PAGE_SIZE = 100;
 
@@ -20,17 +19,13 @@ export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
   let offset = 0;
 
   while (true) {
-    const res = await fetch(
-      `${AGGREGATOR_BASE}?offset=${offset}&limit=${PAGE_SIZE}`
-    );
+    const res = await fetch(`${AGGREGATOR_BASE}?offset=${offset}&limit=${PAGE_SIZE}`);
     if (!res.ok) {
       throw new Error(`Aggregator HTTP ${res.status}: ${res.statusText}`);
     }
 
     const body = await res.json();
-    const page: RawSnsProject[] = Array.isArray(body)
-      ? body
-      : (body.data ?? body.snses ?? []);
+    const page: RawSnsProject[] = Array.isArray(body) ? body : (body.data ?? body.snses ?? []);
 
     if (page.length === 0) break;
 
@@ -43,8 +38,7 @@ export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
 
       for (const [key, val] of raw.icrc1_metadata ?? []) {
         if (key === "icrc1:symbol" && val?.Text) tokenSymbol = val.Text;
-        if (key === "icrc1:decimals" && val?.Nat !== undefined)
-          tokenDecimals = Number(val.Nat);
+        if (key === "icrc1:decimals" && val?.Nat !== undefined) tokenDecimals = Number(val.Nat);
       }
 
       projects.push({

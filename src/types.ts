@@ -71,11 +71,7 @@ export interface SnsProjectAssets {
 
 // ─── Progress ──────────────────────────────────────────────────────────────
 
-export type ScanPhase =
-  | "fetching-sns-list"
-  | "scanning"
-  | "done"
-  | "error";
+export type ScanPhase = "fetching-sns-list" | "scanning" | "done" | "error";
 
 export interface ScanProgress {
   phase: ScanPhase;

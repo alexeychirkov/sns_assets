@@ -46,9 +46,7 @@ const idlFactory = ({ IDL }: { IDL: any }) => {
  *
  * Returns only canister IDs — no name/logo/token metadata.
  */
-export async function fetchSnsProjectsFromCanister(
-  agent: HttpAgent
-): Promise<SnsProject[]> {
+export async function fetchSnsProjectsFromCanister(agent: HttpAgent): Promise<SnsProject[]> {
   const actor = Actor.createActor<SnsWasmActor>(idlFactory, {
     canisterId: Principal.fromText(SNS_WASM_CANISTER_ID),
     agent,
@@ -57,12 +55,7 @@ export async function fetchSnsProjectsFromCanister(
   const { instances } = await actor.list_deployed_snses({});
 
   return instances
-    .filter(
-      (d) =>
-        d.root_canister_id[0] &&
-        d.governance_canister_id[0] &&
-        d.ledger_canister_id[0]
-    )
+    .filter((d) => d.root_canister_id[0] && d.governance_canister_id[0] && d.ledger_canister_id[0])
     .map((d): SnsProject => {
       const rootId = d.root_canister_id[0]!.toText();
       return {

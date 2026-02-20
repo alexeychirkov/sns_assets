@@ -59,21 +59,14 @@ export function App() {
         setCurrent(project.name);
 
         const [neurons, tokenBalance] = await Promise.all([
-          fetchNeurons(project.governanceCanisterId, principal, agent).catch(
-            () => []
-          ),
-          fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(
-            () => 0n
-          ),
+          fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
+          fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
         ]);
 
         const hasAssets = neurons.length > 0 || tokenBalance > 0n;
 
         if (hasAssets) {
-          setResults((prev) => [
-            ...prev,
-            { project, neurons, tokenBalance, hasAssets },
-          ]);
+          setResults((prev) => [...prev, { project, neurons, tokenBalance, hasAssets }]);
         }
 
         doneCount++;
@@ -81,9 +74,7 @@ export function App() {
       }
     }
 
-    await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, projects.length) }, worker)
-    );
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, projects.length) }, worker));
 
     if (!abortRef.current) {
       setCurrent("");
@@ -97,17 +88,11 @@ export function App() {
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">SNS Assets Scanner</h1>
-        <p className="app-subtitle">
-          Нейроны и токены во всех запущенных Dfinity SNS проектах
-        </p>
+        <p className="app-subtitle">Нейроны и токены во всех запущенных Dfinity SNS проектах</p>
       </header>
 
       <main className="app-main">
-        <SourceSelector
-          value={sourceMode}
-          onChange={setSourceMode}
-          disabled={isRunning}
-        />
+        <SourceSelector value={sourceMode} onChange={setSourceMode} disabled={isRunning} />
         <PrincipalInput onSearch={handleSearch} disabled={isRunning} />
 
         <ProgressPanel
@@ -135,9 +120,7 @@ export function App() {
         )}
 
         {phase === "done" && results.length === 0 && (
-          <div className="empty-state">
-            Нейронов и токенов не найдено ни в одном SNS проекте
-          </div>
+          <div className="empty-state">Нейронов и токенов не найдено ни в одном SNS проекте</div>
         )}
       </main>
     </div>

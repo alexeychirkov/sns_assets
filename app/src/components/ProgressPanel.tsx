@@ -8,13 +8,7 @@ interface Props {
   foundCount: number;
 }
 
-export function ProgressPanel({
-  phase,
-  total,
-  scanned,
-  current,
-  foundCount,
-}: Props) {
+export function ProgressPanel({ phase, total, scanned, current, foundCount }: Props) {
   if (phase === "idle") return null;
 
   const pct = total > 0 ? Math.round((scanned / total) * 100) : 0;
@@ -34,10 +28,7 @@ export function ProgressPanel({
             <span className="progress-label">
               {phase === "done" ? (
                 <>
-                  Готово —{" "}
-                  <span className="accent">
-                    найдено в {foundCount} проектах
-                  </span>
+                  Готово — <span className="accent">найдено в {foundCount} проектах</span>
                 </>
               ) : (
                 <>
@@ -65,9 +56,7 @@ export function ProgressPanel({
         </>
       )}
 
-      {phase === "error" && (
-        <div className="progress-error">Ошибка загрузки списка SNS</div>
-      )}
+      {phase === "error" && <div className="progress-error">Ошибка загрузки списка SNS</div>}
     </div>
   );
 }

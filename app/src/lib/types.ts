@@ -37,12 +37,7 @@ export interface SnsProjectResult {
   hasAssets: boolean;
 }
 
-export type ScanPhase =
-  | "idle"
-  | "fetching-list"
-  | "scanning"
-  | "done"
-  | "error";
+export type ScanPhase = "idle" | "fetching-list" | "scanning" | "done" | "error";
 
 export interface ScanState {
   phase: ScanPhase;

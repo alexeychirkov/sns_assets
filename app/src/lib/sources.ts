@@ -12,10 +12,7 @@ import { fetchSnsProjectsFromCanister } from "./canister";
  *                  projects found in both get source = "both" and prefer
  *                  aggregator metadata (name, logo, token info)
  */
-export async function fetchSnsProjects(
-  mode: SourceMode,
-  agent: HttpAgent
-): Promise<SnsProject[]> {
+export async function fetchSnsProjects(mode: SourceMode, agent: HttpAgent): Promise<SnsProject[]> {
   if (mode === "aggregator") {
     return fetchAllSnsProjects();
   }
@@ -31,9 +28,7 @@ export async function fetchSnsProjects(
   ]);
 
   // Index aggregator results by rootCanisterId
-  const byRoot = new Map<string, SnsProject>(
-    fromAggregator.map((p) => [p.rootCanisterId, p])
-  );
+  const byRoot = new Map<string, SnsProject>(fromAggregator.map((p) => [p.rootCanisterId, p]));
 
   // Start result map with all aggregator projects
   const result = new Map<string, SnsProject>(byRoot);
