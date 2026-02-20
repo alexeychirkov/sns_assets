@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
 import { Principal } from "@dfinity/principal";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 
-import { fetchSnsProjects, scanPrincipal } from "sns-assets";
 import type { SnsProjectAssets } from "sns-assets";
+import { fetchSnsProjects, scanPrincipal } from "sns-assets";
 
-import type { ProjectCache } from "./lib/cache";
-import { loadCache, saveCache, clearCache } from "./lib/cache";
 import { CachePanel } from "./components/CachePanel";
 import { PrincipalInput } from "./components/PrincipalInput";
 import { ProgressPanel } from "./components/ProgressPanel";
 import { SNSCard } from "./components/SNSCard";
+import type { ProjectCache } from "./lib/cache";
+import { clearCache, loadCache, saveCache } from "./lib/cache";
 
 type ScanPhase = "idle" | "scanning" | "done" | "error";
 
@@ -30,6 +30,8 @@ export function App() {
   const [cache, setCache] = useState<ProjectCache | null>(() => loadCache());
   const [listPhase, setListPhase] = useState<"idle" | "loading" | "error">("idle");
   const [listError, setListError] = useState("");
+  const [fetchFetched, setFetchFetched] = useState(0);
+  const [fetchTotal, setFetchTotal] = useState(0);
 
   // ─── Per-principal scan ──────────────────────────────────────────────────
   const [scanPhase, setScanPhase] = useState<ScanPhase>("idle");
@@ -47,8 +49,15 @@ export function App() {
   async function handleLoadList() {
     setListPhase("loading");
     setListError("");
+    setFetchFetched(0);
+    setFetchTotal(0);
     try {
-      const projects = await fetchSnsProjects();
+      const projects = await fetchSnsProjects({
+        onProgress(p) {
+          setFetchTotal(p.total);
+          setFetchFetched((prev) => Math.max(prev, p.fetched));
+        },
+      });
       setCache(saveCache(projects));
       setListPhase("idle");
     } catch (err) {
@@ -83,7 +92,7 @@ export function App() {
           concurrency: CONCURRENCY,
           onProgress(p) {
             if (p.phase === "scanning") {
-              setScanned(p.scanned);
+              setScanned((prev) => Math.max(prev, p.scanned));
               setCurrent(p.current ?? "");
             }
           },
@@ -130,6 +139,8 @@ export function App() {
           cache={cache}
           loadPhase={listPhase}
           loadError={listError}
+          fetchFetched={fetchFetched}
+          fetchTotal={fetchTotal}
           onLoad={handleLoadList}
           onClear={handleClearCache}
           disabled={isScanning}

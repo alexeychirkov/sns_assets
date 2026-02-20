@@ -31,7 +31,7 @@ function sortByValue(list: NeuronWithValue[]): NeuronWithValue[] {
 export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
   const { project, neurons, tokenBalance, cumulative, totalValue } = result;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [cardOpen, setCardOpen] = useState(true);
+  const [cardOpen, setCardOpen] = useState(false);
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -78,7 +78,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
         </div>
         <div className="sns-card-title">
           <h3 className="sns-name">{project.name}</h3>
-          {totalValue > 0n && (
+          {(
             <div className="card-total-value">
               {formatTokenAmount(totalValue, project.tokenDecimals)}{" "}
               <span className="card-total-symbol">{project.tokenSymbol}</span>

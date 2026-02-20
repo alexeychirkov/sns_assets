@@ -109,6 +109,7 @@ export async function fetchFromCanister(
 
   const projects: SnsProject[] = [];
   const queue = [...valid];
+  const total = valid.length;
 
   async function worker(): Promise<void> {
     while (queue.length > 0) {
@@ -132,12 +133,12 @@ export async function fetchFromCanister(
         logoDataUrl,
       });
 
-      options.onProgress?.({ phase: "fetching", fetched: projects.length });
+      options.onProgress?.({ phase: "fetching", fetched: projects.length, total });
     }
   }
 
   await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, valid.length) }, worker));
-  options.onProgress?.({ phase: "done", fetched: projects.length });
+  options.onProgress?.({ phase: "done", fetched: projects.length, total });
 
   return projects;
 }

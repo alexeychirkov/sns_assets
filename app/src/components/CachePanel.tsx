@@ -1,18 +1,21 @@
 import type { ProjectCache } from "../lib/cache";
-import { cacheAgeMs, isCacheStale, CACHE_STALE_MS } from "../lib/cache";
+import { CACHE_STALE_MS, cacheAgeMs, isCacheStale } from "../lib/cache";
 import { formatAge } from "../lib/format";
 
 interface Props {
   cache: ProjectCache | null;
   loadPhase: "idle" | "loading" | "error";
   loadError: string;
+  fetchFetched: number;
+  fetchTotal: number;
   onLoad: () => void;
   onClear: () => void;
   disabled: boolean;
 }
 
-export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disabled }: Props) {
+export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTotal, onLoad, onClear, disabled }: Props) {
   const isLoading = loadPhase === "loading";
+  const fetchPct = fetchTotal > 0 ? Math.round((fetchFetched / fetchTotal) * 100) : 0;
   const stale = cache ? isCacheStale(cache) : false;
   const age = cache ? cacheAgeMs(cache) : 0;
 
@@ -61,6 +64,24 @@ export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disab
           )}
         </div>
       </div>
+
+      {isLoading && fetchTotal > 0 && (
+        <div className="fetch-progress">
+          <div className="progress-header">
+            <span className="progress-label">
+              Fetching{" "}
+              <span className="accent">
+                {fetchFetched} / {fetchTotal}
+              </span>{" "}
+              projects
+            </span>
+            <span className="progress-pct">{fetchPct}%</span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${fetchPct}%` }} />
+          </div>
+        </div>
+      )}
 
       {!cache && loadPhase === "idle" && (
         <p className="cache-hint">

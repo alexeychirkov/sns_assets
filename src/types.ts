@@ -130,8 +130,10 @@ export type ScanPhase = "scanning" | "done" | "error";
 
 export interface FetchProgress {
   phase: FetchPhase;
-  /** Projects collected so far */
+  /** Projects enriched so far */
   fetched: number;
+  /** Total projects to enrich (known after list_deployed_snses returns) */
+  total: number;
   error?: string;
 }
 
