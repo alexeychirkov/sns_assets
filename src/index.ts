@@ -5,7 +5,6 @@ import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
 
 import type { FetchOptions, ScanOptions, ScanProjectError, ScanResult, SnsNeuronInfo, SnsProject, SnsProjectAssets, SnsProjectCumulative } from "./types";
-import { SnsSwapLifecycle } from "./types";
 
 // ─── Public type exports ───────────────────────────────────────────────────
 
@@ -15,7 +14,7 @@ export type {
 } from "./types.js";
 
 export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot.js";
-export { getNeuronPermissionName, NeuronPermissionType, SnsSwapLifecycle } from "./types.js";
+export { getNeuronPermissionName, NeuronPermissionType } from "./types.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -39,14 +38,6 @@ function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 
-/**
- * Filter projects to only those with a Committed lifecycle (swap succeeded, project is live).
- * Projects without a lifecycle field set are excluded.
- */
-export function filterLaunchedProjects(projects: SnsProject[]): SnsProject[] {
-  return projects.filter((p) => p.lifecycle === SnsSwapLifecycle.Committed);
-}
-
 // ─── Phase 1: Fetch SNS project list ──────────────────────────────────────
 
 /**
@@ -68,9 +59,9 @@ export function filterLaunchedProjects(projects: SnsProject[]): SnsProject[] {
  * @param options.onProgress Called after each batch of metadata is fetched
  */
 export async function fetchSnsProjects(options: FetchOptions = {}): Promise<SnsProject[]> {
-  const { host = DEFAULT_HOST, onProgress } = options;
+  const { host = DEFAULT_HOST, onProgress, knownProjects } = options;
   const agent = await getAgent(host);
-  return fetchFromCanister(agent, { onProgress });
+  return fetchFromCanister(agent, { onProgress, knownProjects });
 }
 
 // ─── Phase 2: Scan a principal against a pre-fetched list ─────────────────

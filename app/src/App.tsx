@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
 import type { ScanProjectError, SnsProjectAssets } from "sns-assets";
-import { SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT, fetchSnsProjects, filterLaunchedProjects, scanPrincipal } from "sns-assets";
+import { SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT, fetchSnsProjects, scanPrincipal } from "sns-assets";
 
 import { CachePanel } from "./components/CachePanel";
 import { FailedProjectsPanel } from "./components/FailedProjectsPanel";
@@ -11,7 +11,7 @@ import { PrincipalInput } from "./components/PrincipalInput";
 import { ProgressPanel } from "./components/ProgressPanel";
 import { SNSCard } from "./components/SNSCard";
 import type { ProjectCache } from "./lib/cache";
-import { initFromSnapshot, markFetchComplete, upsertProject } from "./lib/cache";
+import { appendProject, initFromSnapshot, markFetchComplete } from "./lib/cache";
 
 type ScanPhase = "idle" | "scanning" | "done" | "error";
 
@@ -61,20 +61,14 @@ export function App() {
     setFetchTotal(0);
     try {
       await fetchSnsProjects({
+        knownProjects: cacheRef.current.projects,
         onProgress(p) {
           setFetchTotal(p.total);
           setFetchFetched((prev) => Math.max(prev, p.fetched));
 
-          // Granular upsert — only write fields that came back successfully
           if (p.project) {
-            const { rootCanisterId, ...fields } = p.project;
-            const partialFields = {
-              ...(p.metaOk ? { name: fields.name, tokenSymbol: fields.tokenSymbol, tokenDecimals: fields.tokenDecimals } : {}),
-              ...(p.logoOk ? { logoDataUrl: fields.logoDataUrl } : {}),
-              ...(p.lifecycleOk ? { lifecycle: fields.lifecycle, swapCanisterId: fields.swapCanisterId } : {}),
-            };
-            if (Object.keys(partialFields).length > 0) {
-              const updated = upsertProject(rootCanisterId, partialFields, cacheRef.current);
+            const updated = appendProject(p.project, cacheRef.current);
+            if (updated !== cacheRef.current) {
               cacheRef.current = updated;
               setCache(updated);
             }
@@ -109,8 +103,8 @@ export function App() {
       setResults([]);
       setFailedProjects([]);
 
-      // Scan only launched (Committed) projects
-      const launched = filterLaunchedProjects(cacheRef.current.projects);
+      // Scan all projects
+      const launched = cacheRef.current.projects;
       setTotal(launched.length);
       setScanned(0);
       setCurrent("");
@@ -137,16 +131,19 @@ export function App() {
     [] // uses cacheRef so no stale closure issue
   );
 
-  // ─── Auto-scan from URL on mount ─────────────────────────────────────────
+  // ─── Auto-fetch SNS list on mount, then auto-scan from URL ──────────────
   useEffect(() => {
-    const text = getPathPrincipal();
-    if (!text) return;
-    try {
-      const principal = Principal.fromText(text);
-      handleSearch(principal);
-    } catch {
-      // invalid principal in URL — ignore
+    async function init() {
+      await handleLoadList();
+      const text = getPathPrincipal();
+      if (!text) return;
+      try {
+        handleSearch(Principal.fromText(text));
+      } catch {
+        // invalid principal in URL — ignore
+      }
     }
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 

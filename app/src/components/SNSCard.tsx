@@ -30,6 +30,8 @@ function sortByValue(list: NeuronWithValue[]): NeuronWithValue[] {
 
 export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
   const { project, neurons, tokenBalance, cumulative, totalValue } = result;
+  const decimals = project.tokenDecimals ?? 8;
+  const symbol = project.tokenSymbol ?? "?";
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [cardOpen, setCardOpen] = useState(false);
 
@@ -80,8 +82,8 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
           <h3 className="sns-name">{project.name}</h3>
           {(
             <div className="card-total-value">
-              {formatTokenAmount(totalValue, project.tokenDecimals)}{" "}
-              <span className="card-total-symbol">{project.tokenSymbol}</span>
+              {formatTokenAmount(totalValue, decimals)}{" "}
+              <span className="card-total-symbol">{symbol}</span>
             </div>
           )}
         </div>
@@ -93,9 +95,9 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
           <div className="section-label">Tokens</div>
           <div className="balance-row">
             <span className="balance-amount">
-              {formatTokenAmount(tokenBalance, project.tokenDecimals)}
+              {formatTokenAmount(tokenBalance, decimals)}
             </span>
-            <span className="balance-symbol">{project.tokenSymbol}</span>
+            <span className="balance-symbol">{symbol}</span>
           </div>
         </div>
       )}
@@ -116,12 +118,12 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                 <tr>
                   <td className="cum-label">Stake</td>
                   <td>
-                    {formatTokenAmount(cumulative.total.stakeE8s, project.tokenDecimals)}{" "}
-                    {project.tokenSymbol}
+                    {formatTokenAmount(cumulative.total.stakeE8s, decimals)}{" "}
+                    {symbol}
                   </td>
                   <td>
-                    {formatTokenAmount(cumulative.owner.stakeE8s, project.tokenDecimals)}{" "}
-                    {project.tokenSymbol}
+                    {formatTokenAmount(cumulative.owner.stakeE8s, decimals)}{" "}
+                    {symbol}
                   </td>
                 </tr>
               )}
@@ -129,12 +131,12 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                 <tr>
                   <td className="cum-label">Maturity</td>
                   <td>
-                    {formatTokenAmount(cumulative.total.totalMaturityE8s, project.tokenDecimals)}{" "}
-                    {project.tokenSymbol}
+                    {formatTokenAmount(cumulative.total.totalMaturityE8s, decimals)}{" "}
+                    {symbol}
                   </td>
                   <td>
-                    {formatTokenAmount(cumulative.owner.totalMaturityE8s, project.tokenDecimals)}{" "}
-                    {project.tokenSymbol}
+                    {formatTokenAmount(cumulative.owner.totalMaturityE8s, decimals)}{" "}
+                    {symbol}
                   </td>
                 </tr>
               )}
@@ -144,16 +146,16 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                   <td>
                     {formatTokenAmount(
                       cumulative.total.stakedMaturityE8s,
-                      project.tokenDecimals
+                      decimals
                     )}{" "}
-                    {project.tokenSymbol}
+                    {symbol}
                   </td>
                   <td>
                     {formatTokenAmount(
                       cumulative.owner.stakedMaturityE8s,
-                      project.tokenDecimals
+                      decimals
                     )}{" "}
-                    {project.tokenSymbol}
+                    {symbol}
                   </td>
                 </tr>
               )}
@@ -219,6 +221,8 @@ interface NeuronRowProps {
 }
 
 function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
+  const decimals = project.tokenDecimals ?? 8;
+  const symbol = project.tokenSymbol ?? "?";
   return (
     <div className="neuron-row">
       <div className="neuron-top">
@@ -234,7 +238,7 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
       <div className="neuron-details">
         <span className="neuron-detail">
           <span className="detail-label">Total value</span>
-          {formatTokenAmount(n.totalValue, project.tokenDecimals)} {project.tokenSymbol}
+          {formatTokenAmount(n.totalValue, decimals)} {symbol}
         </span>
         {n.dissolveDelaySeconds > 0n && (
           <span className="neuron-detail">
@@ -251,18 +255,18 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
         <div className="neuron-details neuron-details-expanded">
           <span className="neuron-detail">
             <span className="detail-label">Stake</span>
-            {formatTokenAmount(n.stakeE8s, project.tokenDecimals)} {project.tokenSymbol}
+            {formatTokenAmount(n.stakeE8s, decimals)} {symbol}
           </span>
           {n.totalMaturityE8s > 0n && (
             <span className="neuron-detail">
               <span className="detail-label">Total maturity</span>
-              {formatTokenAmount(n.totalMaturityE8s, project.tokenDecimals)} {project.tokenSymbol}
+              {formatTokenAmount(n.totalMaturityE8s, decimals)} {symbol}
             </span>
           )}
           {n.stakedMaturityE8s > 0n && (
             <span className="neuron-detail">
               <span className="detail-label">Staked maturity</span>
-              {formatTokenAmount(n.stakedMaturityE8s, project.tokenDecimals)} {project.tokenSymbol}
+              {formatTokenAmount(n.stakedMaturityE8s, decimals)} {symbol}
             </span>
           )}
         </div>

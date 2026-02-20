@@ -1,21 +1,21 @@
 import type { Principal } from "@dfinity/principal";
 
-// ─── SNS Swap Lifecycle ────────────────────────────────────────────────────
+// ─── SNS Project ───────────────────────────────────────────────────────────
 
-/**
- * Mirrors `SnsSwapLifecycle` from `@dfinity/sns`.
- * Committed (3) means the SNS swap completed successfully — project is live.
- */
-export enum SnsSwapLifecycle {
-  Unspecified = 0,
-  Pending = 1,
-  Open = 2,
-  Committed = 3,
-  Aborted = 4,
-  Adopted = 5,
+export interface SnsCanisterIds {
+  governanceCanisterId: string;
+  ledgerCanisterId: string;
+  rootCanisterId: string;
 }
 
-// ─── SNS Project ───────────────────────────────────────────────────────────
+export interface SnsProjectMetadata {
+  /** Absent if ICRC-1 metadata fetch failed */
+  tokenSymbol?: string;
+  /** Absent if ICRC-1 metadata fetch failed */
+  tokenDecimals?: number;
+  /** Data URI for the project logo fetched from governance get_metadata */
+  logoDataUrl?: string;
+}
 
 /**
  * A deployed SNS project.
@@ -26,18 +26,8 @@ export enum SnsSwapLifecycle {
  * const projects   = JSON.parse(serialized) as SnsProject[];
  * ```
  */
-export interface SnsProject {
+export interface SnsProject extends SnsCanisterIds, SnsProjectMetadata {
   name: string;
-  governanceCanisterId: string;
-  ledgerCanisterId: string;
-  rootCanisterId: string;
-  swapCanisterId: string;
-  tokenSymbol: string;
-  tokenDecimals: number;
-  /** Swap lifecycle state. Committed = project is live. */
-  lifecycle?: SnsSwapLifecycle;
-  /** Data URI for the project logo fetched from governance get_metadata */
-  logoDataUrl?: string;
 }
 
 // ─── Neurons ───────────────────────────────────────────────────────────────
@@ -81,17 +71,20 @@ export interface NeuronPermission {
   permission_type: NeuronPermissionType[];
 }
 
-export interface SnsNeuronInfo {
-  /** Hex-encoded neuron ID */
-  id: string;
-  /** Staked amount in smallest token units (cached_neuron_stake_e8s) */
-  stakeE8s: bigint;
+export interface MaturityInfo {
   /** Available maturity in smallest token units */
   maturityE8s: bigint;
   /** Staked maturity in smallest token units */
   stakedMaturityE8s: bigint;
   /** Total maturity = available + staked + disbursing */
   totalMaturityE8s: bigint;
+}
+
+export interface SnsNeuronInfo extends MaturityInfo {
+  /** Hex-encoded neuron ID */
+  id: string;
+  /** Staked amount in smallest token units (cached_neuron_stake_e8s) */
+  stakeE8s: bigint;
   state: NeuronState;
   /** Remaining dissolve delay in seconds */
   dissolveDelaySeconds: bigint;
@@ -106,14 +99,8 @@ export interface SnsNeuronInfo {
 
 // ─── Cumulative ────────────────────────────────────────────────────────────
 
-export interface NeuronCumulative {
+export interface NeuronCumulative extends MaturityInfo {
   stakeE8s: bigint;
-  /** Available maturity */
-  maturityE8s: bigint;
-  /** Staked maturity */
-  stakedMaturityE8s: bigint;
-  /** Total maturity = available + staked + disbursing */
-  totalMaturityE8s: bigint;
 }
 
 export interface SnsProjectCumulative {
@@ -160,17 +147,8 @@ export interface FetchProgress {
   fetched: number;
   /** Total projects to enrich (known after list_deployed_snses returns) */
   total: number;
-  /**
-   * Present when a project was just processed.
-   * Contains only the fields that were successfully fetched (partial update).
-   */
-  project?: Partial<SnsProject> & { rootCanisterId: string };
-  /** Whether ICRC-1 metadata (name/symbol/decimals) was fetched successfully */
-  metaOk?: boolean;
-  /** Whether logo was fetched successfully */
-  logoOk?: boolean;
-  /** Whether swap lifecycle was fetched successfully */
-  lifecycleOk?: boolean;
+  /** The newly fetched project, present when a new project was just processed */
+  project?: SnsProject;
   error?: string;
 }
 
@@ -201,6 +179,12 @@ export interface FetchOptions {
   host?: string;
   /** Called as pages are fetched (useful for large lists) */
   onProgress?: (progress: FetchProgress) => void;
+  /**
+   * Projects already known to the caller (e.g. from a snapshot).
+   * Metadata will only be fetched for projects whose rootCanisterId is
+   * NOT present in this list, drastically reducing network calls.
+   */
+  knownProjects?: SnsProject[];
 }
 
 export interface ScanOptions {

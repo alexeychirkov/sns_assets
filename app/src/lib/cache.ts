@@ -25,33 +25,17 @@ export function initFromSnapshot(
   };
 }
 
-// ─── Granular upsert ────────────────────────────────────────────────────────
+// ─── Append new project ────────────────────────────────────────────────────
 
 /**
- * Return a new cache with specific fields of one project updated.
- * Only the provided fields are written; other fields are left unchanged.
- * If the project is not in the cache yet, it is added (when enough fields are present).
+ * Return a new cache with the given project appended.
+ * If a project with the same rootCanisterId already exists, returns the same reference (no-op).
  */
-export function upsertProject(
-  rootCanisterId: string,
-  fields: Partial<SnsProject>,
-  currentCache: ProjectCache
-): ProjectCache {
-  const idx = currentCache.projects.findIndex((p) => p.rootCanisterId === rootCanisterId);
-  let projects: SnsProject[];
-
-  if (idx >= 0) {
-    projects = [...currentCache.projects];
-    projects[idx] = { ...projects[idx], ...fields };
-  } else {
-    const full = fields as SnsProject;
-    if (!full.rootCanisterId || !full.governanceCanisterId || !full.ledgerCanisterId) {
-      return currentCache;
-    }
-    projects = [...currentCache.projects, full];
-  }
-
-  return { ...currentCache, projects };
+export function appendProject(project: SnsProject, currentCache: ProjectCache): ProjectCache {
+  const exists = currentCache.projects.some((p) => p.rootCanisterId === project.rootCanisterId);
+  if (exists) return currentCache;
+  console.log(`[cache] appending NEW project: ${project.rootCanisterId}`);
+  return { ...currentCache, projects: [...currentCache.projects, project] };
 }
 
 /**
