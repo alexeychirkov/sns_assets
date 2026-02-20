@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { Principal } from "@dfinity/principal";
+import { useState, useEffect, useCallback } from "react";
+import { Principal } from "@dfinity/principal";
 import "./App.css";
 
 import { fetchSnsProjects, scanPrincipal } from "sns-assets";
@@ -16,6 +16,15 @@ type ScanPhase = "idle" | "scanning" | "done" | "error";
 
 const CONCURRENCY = 5;
 
+function getPathPrincipal(): string | null {
+  const m = window.location.pathname.match(/^\/principal\/(.+)$/);
+  return m ? m[1] : null;
+}
+
+function pushPrincipalPath(text: string) {
+  window.history.pushState({}, "", `/principal/${text}`);
+}
+
 export function App() {
   // ─── SNS project list (shared, cached) ──────────────────────────────────
   const [cache, setCache] = useState<ProjectCache | null>(() => loadCache());
@@ -24,12 +33,15 @@ export function App() {
 
   // ─── Per-principal scan ──────────────────────────────────────────────────
   const [scanPhase, setScanPhase] = useState<ScanPhase>("idle");
-  const [scannedPrincipal, setScannedPrincipal] = useState("");
   const [total, setTotal] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [current, setCurrent] = useState("");
   const [results, setResults] = useState<SnsProjectAssets[]>([]);
   const [scanError, setScanError] = useState("");
+
+  // ─── Global filters ──────────────────────────────────────────────────────
+  const [showNonOwned, setShowNonOwned] = useState(false);
+  const [showEmpty, setShowEmpty] = useState(false);
 
   // ─── Load / refresh SNS list ─────────────────────────────────────────────
   async function handleLoadList() {
@@ -53,44 +65,63 @@ export function App() {
   }
 
   // ─── Scan a principal against the cached list ────────────────────────────
-  async function handleSearch(principal: Principal) {
-    if (!cache) return;
+  const handleSearch = useCallback(
+    async (principal: Principal) => {
+      if (!cache) return;
 
-    setScanPhase("scanning");
-    setScanError("");
-    setResults([]);
-    setScannedPrincipal(principal.toText());
-    setTotal(cache.projects.length);
-    setScanned(0);
-    setCurrent("");
+      pushPrincipalPath(principal.toText());
 
-    try {
-      const assets = await scanPrincipal(principal, cache.projects, {
-        concurrency: CONCURRENCY,
-        onProgress(p) {
-          if (p.phase === "scanning") {
-            setScanned(p.scanned);
-            setCurrent(p.current ?? "");
-          }
-        },
-      });
-      setResults(assets);
+      setScanPhase("scanning");
+      setScanError("");
+      setResults([]);
+      setTotal(cache.projects.length);
+      setScanned(0);
       setCurrent("");
-      setScanPhase("done");
-    } catch (err) {
-      setScanError(err instanceof Error ? err.message : String(err));
-      setScanPhase("error");
+
+      try {
+        const assets = await scanPrincipal(principal, cache.projects, {
+          concurrency: CONCURRENCY,
+          onProgress(p) {
+            if (p.phase === "scanning") {
+              setScanned(p.scanned);
+              setCurrent(p.current ?? "");
+            }
+          },
+        });
+        setResults(assets);
+        setCurrent("");
+        setScanPhase("done");
+      } catch (err) {
+        setScanError(err instanceof Error ? err.message : String(err));
+        setScanPhase("error");
+      }
+    },
+    [cache]
+  );
+
+  // ─── Auto-scan from URL on mount ─────────────────────────────────────────
+  useEffect(() => {
+    const text = getPathPrincipal();
+    if (!text || !cache) return;
+    try {
+      const principal = Principal.fromText(text);
+      handleSearch(principal);
+    } catch {
+      // invalid principal in URL — ignore
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount; cache is read from closure at mount time
 
   const isScanning = scanPhase === "scanning";
   const isBusy = isScanning || listPhase === "loading";
+  const showResults = results.length > 0;
+  const showFilterBar = showResults || scanPhase === "done";
 
   return (
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">SNS Assets Scanner</h1>
-        <p className="app-subtitle">Нейроны и токены во всех запущенных Dfinity SNS проектах</p>
+        <p className="app-subtitle">Neurons and tokens across all deployed Dfinity SNS projects</p>
       </header>
 
       <main className="app-main">
@@ -107,7 +138,11 @@ export function App() {
         {/* Step 2 — scan any principal against the cached list */}
         {cache && (
           <>
-            <PrincipalInput onSearch={handleSearch} disabled={isBusy} />
+            <PrincipalInput
+              onSearch={handleSearch}
+              disabled={isBusy}
+              initialValue={getPathPrincipal() ?? ""}
+            />
 
             <ProgressPanel
               phase={scanPhase}
@@ -119,24 +154,47 @@ export function App() {
 
             {scanError && <div className="global-error">{scanError}</div>}
 
-            {results.length > 0 && (
+            {showFilterBar && (
+              <div className="filter-bar">
+                <label className="filter-label">
+                  <input
+                    type="checkbox"
+                    checked={showNonOwned}
+                    onChange={(e) => setShowNonOwned(e.target.checked)}
+                  />
+                  Show non-owned neurons
+                </label>
+                <label className="filter-label">
+                  <input
+                    type="checkbox"
+                    checked={showEmpty}
+                    onChange={(e) => setShowEmpty(e.target.checked)}
+                  />
+                  Show empty neurons
+                </label>
+              </div>
+            )}
+
+            {showResults && (
               <section className="results-section">
                 <h2 className="results-heading">
-                  Найдено в {results.length} проект
-                  {results.length === 1 ? "е" : "ах"}
+                  Found in {results.length} project{results.length === 1 ? "" : "s"}
                 </h2>
                 <div className="results-grid">
                   {results.map((r) => (
-                    <SNSCard key={r.project.rootCanisterId} result={r} scannedPrincipal={scannedPrincipal} />
+                    <SNSCard
+                      key={r.project.rootCanisterId}
+                      result={r}
+                      showNonOwned={showNonOwned}
+                      showEmpty={showEmpty}
+                    />
                   ))}
                 </div>
               </section>
             )}
 
             {scanPhase === "done" && results.length === 0 && (
-              <div className="empty-state">
-                Нейронов и токенов не найдено ни в одном SNS проекте
-              </div>
+              <div className="empty-state">No neurons or tokens found in any SNS project</div>
             )}
           </>
         )}

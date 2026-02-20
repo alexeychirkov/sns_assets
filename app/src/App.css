@@ -284,6 +284,17 @@ body {
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
+.card-total-value {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text);
+}
+.card-total-symbol {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
 
 /* ─── Asset sections ─────────────────────────────────────────────────────── */
 .asset-section {
@@ -317,6 +328,130 @@ body {
   color: var(--text-muted);
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* Neurons header row */
+.neurons-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.neuron-counter {
+  font-size: var(--fs-xxs);
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.toggle-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Cumulative table */
+.cumulative-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-sm);
+}
+.cumulative-table th {
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 2px 8px 4px 0;
+  text-align: left;
+}
+.cumulative-table td {
+  padding: 2px 8px 2px 0;
+  font-weight: 700;
+}
+.cum-label {
+  font-size: var(--fs-xxs);
+  font-weight: 400 !important;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.filter-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--text);
+}
+
+/* Neuron sub-sections */
+.neuron-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.neuron-subsection-label {
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 4px 0 2px;
+}
+
+/* More / less button on neuron */
+.more-btn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  transition: border-color 0.1s, color 0.1s;
+}
+.more-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Expanded neuron details */
+.neuron-details-expanded {
+  border-top: 1px solid var(--border-light);
+  padding-top: 4px;
+  margin-top: 2px;
 }
 
 /* Neurons */

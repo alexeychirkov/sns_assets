@@ -80,6 +80,14 @@ export async function fetchNeurons(
     );
     const totalMaturityE8s = n.maturity_e8s_equivalent + stakedMaturityE8s + totalDisbursingMaturity;
 
+    const managePrincipals = permissions
+      .filter((p) => p.permission_type.includes(NeuronPermissionType.ManagePrincipals))
+      .map((p) => p.principal)
+      .filter((p): p is string => p !== null);
+
+    const isSoleOwner =
+      managePrincipals.length === 1 && managePrincipals[0] === principal.toText();
+
     return {
       id: rawId ? neuronIdToHex(rawId.id) : "unknown",
       stakeE8s: n.cached_neuron_stake_e8s,
@@ -91,6 +99,7 @@ export async function fetchNeurons(
       dissolveAt,
       votingPowerPercentageMultiplier: n.voting_power_percentage_multiplier,
       permissions,
+      isSoleOwner,
     };
   });
 }

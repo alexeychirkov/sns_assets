@@ -80,6 +80,27 @@ export interface SnsNeuronInfo {
   votingPowerPercentageMultiplier: bigint;
   /** Full permissions list from the governance canister */
   permissions: NeuronPermission[];
+  /** true if the scanned principal is the sole holder of ManagePrincipals */
+  isSoleOwner: boolean;
+}
+
+// ─── Cumulative ────────────────────────────────────────────────────────────
+
+export interface NeuronCumulative {
+  stakeE8s: bigint;
+  /** Available maturity */
+  maturityE8s: bigint;
+  /** Staked maturity */
+  stakedMaturityE8s: bigint;
+  /** Total maturity = available + staked + disbursing */
+  totalMaturityE8s: bigint;
+}
+
+export interface SnsProjectCumulative {
+  /** Summed across all neurons returned for the principal */
+  total: NeuronCumulative;
+  /** Summed only for neurons where isSoleOwner === true */
+  owner: NeuronCumulative;
 }
 
 // ─── Results ───────────────────────────────────────────────────────────────
@@ -91,6 +112,13 @@ export interface SnsProjectAssets {
   /** Token balance in smallest units (bigint) */
   tokenBalance: bigint;
   hasAssets: boolean;
+  /** Cumulative stake + maturity totals */
+  cumulative: SnsProjectCumulative;
+  /**
+   * Total owned value = tokenBalance + owner stake + owner total maturity.
+   * All amounts are in smallest token units.
+   */
+  totalValue: bigint;
 }
 
 // ─── Progress ──────────────────────────────────────────────────────────────

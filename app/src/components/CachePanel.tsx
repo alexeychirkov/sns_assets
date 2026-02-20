@@ -19,16 +19,16 @@ export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disab
   return (
     <div className="cache-panel">
       <div className="cache-panel-header">
-        <span className="cache-panel-title">SNS Проекты</span>
+        <span className="cache-panel-title">SNS Projects</span>
 
         {cache && (
           <div className="cache-meta">
             <span className={`cache-count${stale ? " cache-stale" : ""}`}>
-              {cache.projects.length} проектов
+              {cache.projects.length} projects
             </span>
             <span className="cache-dot">·</span>
             <span className={`cache-age${stale ? " cache-stale" : ""}`}>
-              {stale ? <>⚠ устарело ({formatAge(age)})</> : formatAge(age)}
+              {stale ? <>⚠ stale ({formatAge(age)})</> : formatAge(age)}
             </span>
           </div>
         )}
@@ -40,12 +40,12 @@ export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disab
             {isLoading ? (
               <>
                 <span className="spinner" />
-                Загружаю…
+                Loading…
               </>
             ) : cache ? (
-              "Обновить список"
+              "Refresh list"
             ) : (
-              "Загрузить список"
+              "Load list"
             )}
           </button>
 
@@ -54,7 +54,7 @@ export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disab
               className="cache-clear-btn"
               onClick={onClear}
               disabled={disabled}
-              title="Очистить кэш"
+              title="Clear cache"
             >
               ✕
             </button>
@@ -64,9 +64,8 @@ export function CachePanel({ cache, loadPhase, loadError, onLoad, onClear, disab
 
       {!cache && loadPhase === "idle" && (
         <p className="cache-hint">
-          Загрузите список SNS проектов один раз — потом сканируйте любое количество принципалов без
-          повторных запросов.{" "}
-          <span className="cache-hint-ttl">Кэш действителен {CACHE_STALE_MS / 3600000} ч.</span>
+          Load the SNS project list once — then scan any number of principals without re-fetching.{" "}
+          <span className="cache-hint-ttl">Cache is valid for {CACHE_STALE_MS / 3600000} h.</span>
         </p>
       )}
 

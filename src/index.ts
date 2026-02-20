@@ -3,7 +3,7 @@ import { getAgent } from "./agent.js";
 import { fetchFromCanister } from "./canister.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
-import type { FetchOptions, ScanOptions, SnsProject, SnsProjectAssets } from "./types.js";
+import type { FetchOptions, ScanOptions, SnsProject, SnsProjectAssets, SnsNeuronInfo, SnsProjectCumulative } from "./types.js";
 
 // ─── Public type exports ───────────────────────────────────────────────────
 
@@ -19,6 +19,8 @@ export type {
   SnsNeuronInfo,
   NeuronState,
   NeuronPermission,
+  NeuronCumulative,
+  SnsProjectCumulative,
 } from "./types.js";
 
 export { NeuronPermissionType, getNeuronPermissionName } from "./types.js";
@@ -27,6 +29,21 @@ export { NeuronPermissionType, getNeuronPermissionName } from "./types.js";
 
 const DEFAULT_HOST = "https://ic0.app";
 const DEFAULT_CONCURRENCY = 5;
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
+  const sum = (arr: SnsNeuronInfo[]) => ({
+    stakeE8s: arr.reduce((a, n) => a + n.stakeE8s, 0n),
+    maturityE8s: arr.reduce((a, n) => a + n.maturityE8s, 0n),
+    stakedMaturityE8s: arr.reduce((a, n) => a + n.stakedMaturityE8s, 0n),
+    totalMaturityE8s: arr.reduce((a, n) => a + n.totalMaturityE8s, 0n),
+  });
+  return {
+    total: sum(neurons),
+    owner: sum(neurons.filter((n) => n.isSoleOwner)),
+  };
+}
 
 // ─── Phase 1: Fetch SNS project list ──────────────────────────────────────
 
@@ -105,7 +122,9 @@ export async function scanPrincipal(
 
       const hasAssets = neurons.length > 0 || tokenBalance > 0n;
       if (includeEmpty || hasAssets) {
-        results.push({ project, neurons, tokenBalance, hasAssets });
+        const cumulative = computeCumulative(neurons);
+        const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
+        results.push({ project, neurons, tokenBalance, hasAssets, cumulative, totalValue });
       }
 
       scanned++;
@@ -156,11 +175,15 @@ export async function* streamPrincipal(
           fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
         ]);
 
+        const cumulative = computeCumulative(neurons);
+        const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
         buffer.push({
           project,
           neurons,
           tokenBalance,
           hasAssets: neurons.length > 0 || tokenBalance > 0n,
+          cumulative,
+          totalValue,
         });
         notify();
       }

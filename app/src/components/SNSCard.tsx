@@ -1,10 +1,11 @@
-import type { SnsProjectAssets } from "sns-assets";
-import { NeuronPermissionType } from "sns-assets";
+import { useState } from "react";
+import type { SnsNeuronInfo, SnsProjectAssets } from "sns-assets";
 import { formatDays, formatTokenAmount } from "../lib/format";
 
 interface Props {
   result: SnsProjectAssets;
-  scannedPrincipal: string;
+  showNonOwned: boolean;
+  showEmpty: boolean;
 }
 
 const STATE_LABEL: Record<string, string> = {
@@ -19,10 +20,50 @@ const STATE_CLASS: Record<string, string> = {
   dissolved: "state-dissolved",
 };
 
-export function SNSCard({ result, scannedPrincipal }: Props) {
-  const { project, neurons, tokenBalance } = result;
+type NeuronWithValue = SnsNeuronInfo & { totalValue: bigint };
+
+function sortByValue(list: NeuronWithValue[]): NeuronWithValue[] {
+  return [...list].sort((a, b) =>
+    b.totalValue > a.totalValue ? 1 : b.totalValue < a.totalValue ? -1 : 0
+  );
+}
+
+export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
+  const { project, neurons, tokenBalance, cumulative, totalValue } = result;
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function prepareNeurons(list: SnsNeuronInfo[]): NeuronWithValue[] {
+    const withValue = list.map((n) => ({
+      ...n,
+      totalValue: n.stakeE8s + n.totalMaturityE8s,
+    }));
+    const filtered = showEmpty ? withValue : withValue.filter((n) => n.totalValue > 0n);
+    return sortByValue(filtered);
+  }
+
+  const mineNeurons = prepareNeurons(neurons.filter((n) => n.isSoleOwner));
+  const sharedNeurons = showNonOwned
+    ? prepareNeurons(neurons.filter((n) => !n.isSoleOwner))
+    : [];
+
   const hasBalance = tokenBalance > 0n;
-  const hasNeurons = neurons.length > 0;
+  const hasNeurons = mineNeurons.length > 0 || sharedNeurons.length > 0;
+  const hasCumulativeData =
+    cumulative.total.stakeE8s > 0n || cumulative.total.totalMaturityE8s > 0n;
+
+  const ownedCount = neurons.filter((n) => n.isSoleOwner).length;
 
   return (
     <div className="sns-card">
@@ -30,12 +71,18 @@ export function SNSCard({ result, scannedPrincipal }: Props) {
         <div className="sns-logo-placeholder">{project.name.charAt(0).toUpperCase()}</div>
         <div className="sns-card-title">
           <h3 className="sns-name">{project.name}</h3>
+          {totalValue > 0n && (
+            <div className="card-total-value">
+              {formatTokenAmount(totalValue, project.tokenDecimals)}{" "}
+              <span className="card-total-symbol">{project.tokenSymbol}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {hasBalance && (
         <div className="asset-section">
-          <div className="section-label">Токены</div>
+          <div className="section-label">Tokens</div>
           <div className="balance-row">
             <span className="balance-amount">
               {formatTokenAmount(tokenBalance, project.tokenDecimals)}
@@ -45,86 +92,179 @@ export function SNSCard({ result, scannedPrincipal }: Props) {
         </div>
       )}
 
+      {hasCumulativeData && (
+        <div className="asset-section">
+          <div className="section-label">Neuron summary</div>
+          <table className="cumulative-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Total</th>
+                <th>Owned</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cumulative.total.stakeE8s > 0n && (
+                <tr>
+                  <td className="cum-label">Stake</td>
+                  <td>
+                    {formatTokenAmount(cumulative.total.stakeE8s, project.tokenDecimals)}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                  <td>
+                    {formatTokenAmount(cumulative.owner.stakeE8s, project.tokenDecimals)}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                </tr>
+              )}
+              {cumulative.total.totalMaturityE8s > 0n && (
+                <tr>
+                  <td className="cum-label">Maturity</td>
+                  <td>
+                    {formatTokenAmount(cumulative.total.totalMaturityE8s, project.tokenDecimals)}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                  <td>
+                    {formatTokenAmount(cumulative.owner.totalMaturityE8s, project.tokenDecimals)}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                </tr>
+              )}
+              {cumulative.total.stakedMaturityE8s > 0n && (
+                <tr>
+                  <td className="cum-label">Stk.Mat.</td>
+                  <td>
+                    {formatTokenAmount(
+                      cumulative.total.stakedMaturityE8s,
+                      project.tokenDecimals
+                    )}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                  <td>
+                    {formatTokenAmount(
+                      cumulative.owner.stakedMaturityE8s,
+                      project.tokenDecimals
+                    )}{" "}
+                    {project.tokenSymbol}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {hasNeurons && (
         <div className="asset-section">
-          <div className="section-label">Нейроны ({neurons.length})</div>
-          <div className="neurons-list">
-            {neurons.map((n) => {
-              // Principals that hold ManagePrincipals (= 2) permission
-              const managePrincipals = n.permissions
-                .filter((p) => p.permission_type.includes(NeuronPermissionType.ManagePrincipals))
-                .map((p) => p.principal)
-                .filter((p): p is string => p !== null);
-
-              const isSoleOwner =
-                managePrincipals.length === 1 && managePrincipals[0] === scannedPrincipal;
-              const hasNoControl = managePrincipals.length === 0;
-              const isShared = !isSoleOwner && !hasNoControl;
-
-              const otherPrincipals = managePrincipals.filter((p) => p !== scannedPrincipal);
-
-              return (
-                <div key={n.id} className="neuron-row">
-                  <div className="neuron-top">
-                    <span className="neuron-id" title={n.id}>
-                      #{n.id}
-                    </span>
-                    <div className="neuron-badges">
-                      <span className={`neuron-state ${STATE_CLASS[n.state]}`}>
-                        {STATE_LABEL[n.state]}
-                      </span>
-                      {isSoleOwner && (
-                        <span className="badge-sole-owner" title="Only principal with ManagePrincipals">
-                          sole owner
-                        </span>
-                      )}
-                      {isShared && (
-                        <span
-                          className="badge-shared"
-                          title={`ManagePrincipals also held by: ${otherPrincipals.join(", ")}`}
-                        >
-                          ⚠ shared
-                        </span>
-                      )}
-                      {hasNoControl && (
-                        <span className="badge-no-control" title="No principal holds ManagePrincipals">
-                          no control
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="neuron-details">
-                    <span className="neuron-detail">
-                      <span className="detail-label">Стейк</span>
-                      {formatTokenAmount(n.stakeE8s, project.tokenDecimals)} {project.tokenSymbol}
-                    </span>
-                    {n.dissolveDelaySeconds > 0n && (
-                      <span className="neuron-detail">
-                        <span className="detail-label">
-                          {n.state === "dissolving" ? "Осталось" : "Задержка"}
-                        </span>
-                        {formatDays(n.dissolveDelaySeconds)}
-                      </span>
-                    )}
-                    {n.totalMaturityE8s > 0n && (
-                      <span className="neuron-detail">
-                        <span className="detail-label">Total Maturity</span>
-                        {formatTokenAmount(n.totalMaturityE8s, project.tokenDecimals)}{" "}
-                        {project.tokenSymbol}
-                      </span>
-                    )}
-                    {n.stakedMaturityE8s > 0n && (
-                      <span className="neuron-detail">
-                        <span className="detail-label">Staked Maturity</span>
-                        {formatTokenAmount(n.stakedMaturityE8s, project.tokenDecimals)}{" "}
-                        {project.tokenSymbol}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="section-label">
+            Neurons
+            <span className="neuron-counter">
+              {" "}
+              (owned: {ownedCount} / total: {neurons.length})
+            </span>
           </div>
+
+          {mineNeurons.length > 0 && (
+            <div className="neuron-subsection">
+              <div className="neuron-subsection-label">Mine ({mineNeurons.length})</div>
+              <div className="neurons-list">
+                {mineNeurons.map((n) => (
+                  <NeuronRow
+                    key={n.id}
+                    neuron={n}
+                    project={project}
+                    expanded={expanded.has(n.id)}
+                    onToggle={() => toggleExpanded(n.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sharedNeurons.length > 0 && (
+            <div className="neuron-subsection">
+              <div className="neuron-subsection-label">Shared ({sharedNeurons.length})</div>
+              <div className="neurons-list">
+                {sharedNeurons.map((n) => (
+                  <NeuronRow
+                    key={n.id}
+                    neuron={n}
+                    project={project}
+                    expanded={expanded.has(n.id)}
+                    onToggle={() => toggleExpanded(n.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface NeuronRowProps {
+  neuron: NeuronWithValue;
+  project: SnsProjectAssets["project"];
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
+  return (
+    <div className="neuron-row">
+      <div className="neuron-top">
+        <span className="neuron-id" title={n.id}>
+          #{n.id}
+        </span>
+        <div className="neuron-badges">
+          <span className={`neuron-state ${STATE_CLASS[n.state]}`}>{STATE_LABEL[n.state]}</span>
+          {n.isSoleOwner && (
+            <span className="badge-sole-owner" title="Only principal with ManagePrincipals">
+              sole owner
+            </span>
+          )}
+          <button className="more-btn" onClick={onToggle}>
+            {expanded ? "less" : "more"}
+          </button>
+        </div>
+      </div>
+
+      {/* Default view: totalValue + dissolve delay */}
+      <div className="neuron-details">
+        <span className="neuron-detail">
+          <span className="detail-label">Total value</span>
+          {formatTokenAmount(n.totalValue, project.tokenDecimals)} {project.tokenSymbol}
+        </span>
+        {n.dissolveDelaySeconds > 0n && (
+          <span className="neuron-detail">
+            <span className="detail-label">
+              {n.state === "dissolving" ? "Remaining" : "Delay"}
+            </span>
+            {formatDays(n.dissolveDelaySeconds)}
+          </span>
+        )}
+      </div>
+
+      {/* Expanded view: stake + maturities */}
+      {expanded && (
+        <div className="neuron-details neuron-details-expanded">
+          <span className="neuron-detail">
+            <span className="detail-label">Stake</span>
+            {formatTokenAmount(n.stakeE8s, project.tokenDecimals)} {project.tokenSymbol}
+          </span>
+          {n.totalMaturityE8s > 0n && (
+            <span className="neuron-detail">
+              <span className="detail-label">Total maturity</span>
+              {formatTokenAmount(n.totalMaturityE8s, project.tokenDecimals)} {project.tokenSymbol}
+            </span>
+          )}
+          {n.stakedMaturityE8s > 0n && (
+            <span className="neuron-detail">
+              <span className="detail-label">Staked maturity</span>
+              {formatTokenAmount(n.stakedMaturityE8s, project.tokenDecimals)} {project.tokenSymbol}
+            </span>
+          )}
         </div>
       )}
     </div>

@@ -4,10 +4,11 @@ import { Principal } from "@dfinity/principal";
 interface Props {
   onSearch: (principal: Principal) => void;
   disabled: boolean;
+  initialValue?: string;
 }
 
-export function PrincipalInput({ onSearch, disabled }: Props) {
-  const [value, setValue] = useState("");
+export function PrincipalInput({ onSearch, disabled, initialValue = "" }: Props) {
+  const [value, setValue] = useState(initialValue);
   const [error, setError] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
@@ -15,14 +16,14 @@ export function PrincipalInput({ onSearch, disabled }: Props) {
     setError("");
     const text = value.trim();
     if (!text) {
-      setError("Введите принципал");
+      setError("Enter a principal");
       return;
     }
     try {
       const p = Principal.fromText(text);
       onSearch(p);
     } catch {
-      setError("Некорректный принципал");
+      setError("Invalid principal");
     }
   }
 
@@ -43,7 +44,7 @@ export function PrincipalInput({ onSearch, disabled }: Props) {
           autoComplete="off"
         />
         <button className="search-btn" type="submit" disabled={disabled}>
-          {disabled ? "Сканирую…" : "Поиск"}
+          {disabled ? "Scanning…" : "Scan"}
         </button>
       </div>
       {error && <p className="input-error-msg">{error}</p>}

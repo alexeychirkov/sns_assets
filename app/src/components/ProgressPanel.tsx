@@ -21,15 +21,16 @@ export function ProgressPanel({ phase, total, scanned, current, foundCount }: Pr
             <span className="progress-label">
               {phase === "done" ? (
                 <>
-                  Готово — <span className="accent">найдено в {foundCount} проектах</span>
+                  Done —{" "}
+                  <span className="accent">found in {foundCount} project{foundCount === 1 ? "" : "s"}</span>
                 </>
               ) : (
                 <>
-                  Проверено{" "}
+                  Checked{" "}
                   <span className="accent">
                     {scanned} / {total}
                   </span>{" "}
-                  SNS
+                  SNS projects
                 </>
               )}
             </span>
@@ -49,7 +50,7 @@ export function ProgressPanel({ phase, total, scanned, current, foundCount }: Pr
         </>
       )}
 
-      {phase === "error" && <div className="progress-error">Ошибка загрузки списка SNS</div>}
+      {phase === "error" && <div className="progress-error">Failed to load SNS list</div>}
     </div>
   );
 }
