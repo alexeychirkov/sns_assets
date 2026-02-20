@@ -1,4 +1,4 @@
-import type { RawSnsProject, SnsProject } from "./types.js";
+import type { RawSnsProject, SnsProject, FetchOptions } from "./types.js";
 
 /** SNS aggregator canister HTTP endpoint */
 const AGGREGATOR_BASE = "https://qaa6y-5yaaa-aaaaa-aaafa-cai.raw.ic0.app/v1/snses";
@@ -9,19 +9,19 @@ const PAGE_SIZE = 100;
  * Fetch all SNS projects from the aggregator canister's REST HTTP API.
  * Paginates automatically until all projects are retrieved.
  */
-export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
+export async function fetchFromAggregator(
+  options: Pick<FetchOptions, "onProgress"> = {}
+): Promise<SnsProject[]> {
   const projects: SnsProject[] = [];
   let offset = 0;
 
   while (true) {
-    const url = `${AGGREGATOR_BASE}?offset=${offset}&limit=${PAGE_SIZE}`;
-    const res = await fetch(url);
+    const res = await fetch(`${AGGREGATOR_BASE}?offset=${offset}&limit=${PAGE_SIZE}`);
 
     if (!res.ok) {
-      throw new Error(`SNS aggregator responded with HTTP ${res.status}: ${res.statusText}`);
+      throw new Error(`SNS aggregator HTTP ${res.status}: ${res.statusText}`);
     }
 
-    // The aggregator may return either an array or { data: [...], total_count: N }
     const body = await res.json();
     const page: RawSnsProject[] = Array.isArray(body) ? body : (body.data ?? body.snses ?? []);
 
@@ -31,6 +31,8 @@ export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
       const parsed = parseRawProject(raw);
       if (parsed) projects.push(parsed);
     }
+
+    options.onProgress?.({ phase: "fetching", fetched: projects.length });
 
     if (page.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
@@ -70,5 +72,6 @@ function parseRawProject(raw: RawSnsProject): SnsProject | null {
     rootCanisterId: ids.root_canister_id,
     tokenSymbol,
     tokenDecimals,
+    source: "aggregator" as const,
   };
 }

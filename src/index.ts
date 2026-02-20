@@ -1,47 +1,83 @@
 import { Principal } from "@dfinity/principal";
-import { fetchAllSnsProjects } from "./aggregator.js";
 import { getAgent } from "./agent.js";
+import { fetchFromSources } from "./sources.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
-import type { ScanOptions, ScanProgress, SnsProject, SnsProjectAssets } from "./types.js";
+import type { FetchOptions, ScanOptions, SnsProject, SnsProjectAssets } from "./types.js";
+
+// ─── Public type exports ───────────────────────────────────────────────────
 
 export type {
+  FetchOptions,
+  FetchProgress,
+  FetchPhase,
   ScanOptions,
   ScanProgress,
+  ScanPhase,
   SnsProject,
   SnsProjectAssets,
   SnsNeuronInfo,
   NeuronState,
-  SnsCanisterIds,
-  SnsMeta,
+  SnsSource,
+  SourceMode,
 } from "./types.js";
+
+// ─── Constants ─────────────────────────────────────────────────────────────
 
 const DEFAULT_HOST = "https://ic0.app";
 const DEFAULT_CONCURRENCY = 5;
 
+// ─── Phase 1: Fetch SNS project list ──────────────────────────────────────
+
 /**
- * Scan all running SNS projects and return neurons + token balances
- * for the given principal.
+ * Fetch the list of all deployed SNS projects.
  *
- * @param principal - The @dfinity/Principal to scan for
- * @param options   - Optional configuration (host, concurrency, progress callback)
- * @returns Array of per-SNS results (only projects with assets by default)
+ * The returned `SnsProject[]` is **fully JSON-serializable** — persist it
+ * however you like and pass it directly to `scanPrincipal` later:
  *
- * @example
  * ```ts
- * import { scanSnsAssets } from "sns-assets";
- * import { Principal } from "@dfinity/principal";
+ * // Fetch once
+ * const projects = await fetchSnsProjects({ source: "both" });
+ * localStorage.setItem("sns", JSON.stringify(projects));
  *
- * const results = await scanSnsAssets(
- *   Principal.fromText("aaaaa-aa"),
- *   {
- *     onProgress: (p) => console.log(`${p.scanned}/${p.total} scanned`),
- *   }
- * );
+ * // Restore later (no network call)
+ * const projects = JSON.parse(localStorage.getItem("sns")!) as SnsProject[];
  * ```
+ *
+ * @param options.source     Which source(s) to query. Default: `"both"`
+ * @param options.host       IC gateway host. Default: `"https://ic0.app"`
+ * @param options.onProgress Called after each page is fetched
  */
-export async function scanSnsAssets(
+export async function fetchSnsProjects(options: FetchOptions = {}): Promise<SnsProject[]> {
+  const { source = "both", host = DEFAULT_HOST, onProgress } = options;
+  const agent = await getAgent(host);
+  return fetchFromSources(source, agent, { onProgress });
+}
+
+// ─── Phase 2: Scan a principal against a pre-fetched list ─────────────────
+
+/**
+ * Scan a principal for neurons + token balances across a list of SNS projects.
+ *
+ * Pass the result of `fetchSnsProjects()` (or a JSON-restored copy) as the
+ * second argument — **the SNS list is never re-fetched**.
+ *
+ * ```ts
+ * const projects = await fetchSnsProjects();
+ *
+ * // Scan as many principals as needed — one network fetch total
+ * const r1 = await scanPrincipal(p1, projects);
+ * const r2 = await scanPrincipal(p2, projects);
+ * const r3 = await scanPrincipal(p3, projects);
+ * ```
+ *
+ * @param principal The principal to scan
+ * @param projects  Pre-fetched SNS project list
+ * @param options   Concurrency, progress callback, etc.
+ */
+export async function scanPrincipal(
   principal: Principal,
+  projects: SnsProject[],
   options: ScanOptions = {}
 ): Promise<SnsProjectAssets[]> {
   const {
@@ -51,108 +87,62 @@ export async function scanSnsAssets(
     includeEmpty = false,
   } = options;
 
-  const report = (progress: Partial<ScanProgress> & { phase: ScanProgress["phase"] }) => {
-    onProgress?.({
-      total: 0,
-      scanned: 0,
-      ...progress,
-    });
-  };
-
-  // 1. Fetch the SNS list ─────────────────────────────────────────────────
-  report({ phase: "fetching-sns-list" });
-
-  let projects: SnsProject[];
-  try {
-    projects = await fetchAllSnsProjects();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    report({ phase: "error", error: msg });
-    throw err;
-  }
-
   const total = projects.length;
   let scanned = 0;
 
-  report({ phase: "scanning", total, scanned });
-
-  // 2. Shared agent for all queries ──────────────────────────────────────
   const agent = await getAgent(host);
-
-  // 3. Scan with bounded concurrency ────────────────────────────────────
   const results: SnsProjectAssets[] = [];
   const queue = [...projects];
-
-  async function scanOne(project: SnsProject): Promise<SnsProjectAssets | null> {
-    const [neurons, tokenBalance] = await Promise.all([
-      fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
-      fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
-    ]);
-
-    const hasAssets = neurons.length > 0 || tokenBalance > 0n;
-
-    return {
-      project,
-      neurons,
-      tokenBalance,
-      hasAssets,
-    };
-  }
 
   async function worker(): Promise<void> {
     while (queue.length > 0) {
       const project = queue.shift()!;
 
-      report({ phase: "scanning", total, scanned, current: project.name });
+      const [neurons, tokenBalance] = await Promise.all([
+        fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
+        fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
+      ]);
 
-      try {
-        const result = await scanOne(project);
-        if (result && (includeEmpty || result.hasAssets)) {
-          results.push(result);
-        }
-      } catch {
-        // individual project errors are already swallowed in scanOne
+      const hasAssets = neurons.length > 0 || tokenBalance > 0n;
+      if (includeEmpty || hasAssets) {
+        results.push({ project, neurons, tokenBalance, hasAssets });
       }
 
       scanned++;
-      report({ phase: "scanning", total, scanned, current: project.name });
+      onProgress?.({ phase: "scanning", total, scanned, current: project.name });
     }
   }
 
-  // Run `concurrency` workers in parallel
-  await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, () => worker()));
-
-  report({ phase: "done", total, scanned });
+  await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, worker));
+  onProgress?.({ phase: "done", total, scanned });
 
   return results;
 }
 
 /**
- * Async generator variant — yields each SNS result as it completes,
- * which is useful for streaming progress to a UI.
+ * Async-generator variant of `scanPrincipal` — yields each result as it
+ * arrives, useful for streaming updates to a UI.
  *
- * @example
  * ```ts
- * for await (const item of streamSnsAssets(principal)) {
+ * const projects = await fetchSnsProjects();
+ *
+ * for await (const item of streamPrincipal(principal, projects)) {
  *   console.log(item.project.name, item.neurons.length, item.tokenBalance);
  * }
  * ```
  */
-export async function* streamSnsAssets(
+export async function* streamPrincipal(
   principal: Principal,
+  projects: SnsProject[],
   options: Omit<ScanOptions, "onProgress"> = {}
 ): AsyncGenerator<SnsProjectAssets> {
   const { host = DEFAULT_HOST, concurrency = DEFAULT_CONCURRENCY } = options;
 
-  const projects = await fetchAllSnsProjects();
   const agent = await getAgent(host);
-
   const queue = [...projects];
 
-  // Use a channel-like approach with a results buffer
   const buffer: SnsProjectAssets[] = [];
   let done = false;
-  let pending = 0;
   let resolveNext: (() => void) | undefined;
 
   function notify() {
@@ -163,26 +153,26 @@ export async function* streamSnsAssets(
     }
   }
 
-  async function worker(): Promise<void> {
-    while (queue.length > 0) {
-      const project = queue.shift()!;
-      pending++;
+  const workerPromises = Array.from(
+    { length: Math.min(concurrency, projects.length) },
+    async () => {
+      while (queue.length > 0) {
+        const project = queue.shift()!;
 
-      const [neurons, tokenBalance] = await Promise.all([
-        fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
-        fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
-      ]);
+        const [neurons, tokenBalance] = await Promise.all([
+          fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
+          fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
+        ]);
 
-      const hasAssets = neurons.length > 0 || tokenBalance > 0n;
-      buffer.push({ project, neurons, tokenBalance, hasAssets });
-      pending--;
-      notify();
+        buffer.push({
+          project,
+          neurons,
+          tokenBalance,
+          hasAssets: neurons.length > 0 || tokenBalance > 0n,
+        });
+        notify();
+      }
     }
-  }
-
-  // Kick off workers
-  const workerPromises = Array.from({ length: Math.min(concurrency, projects.length) }, () =>
-    worker()
   );
 
   Promise.all(workerPromises).then(() => {
@@ -190,8 +180,7 @@ export async function* streamSnsAssets(
     notify();
   });
 
-  // Yield results as they arrive
-  while (!done || buffer.length > 0 || pending > 0) {
+  while (!done || buffer.length > 0) {
     if (buffer.length > 0) {
       yield buffer.shift()!;
     } else {
@@ -201,19 +190,31 @@ export async function* streamSnsAssets(
     }
   }
 
-  // Drain any remaining buffered results
-  while (buffer.length > 0) {
-    yield buffer.shift()!;
-  }
+  while (buffer.length > 0) yield buffer.shift()!;
 }
 
+// ─── Convenience: both phases in one call ─────────────────────────────────
+
 /**
- * Utility: format a token amount from smallest units to human-readable string.
+ * Convenience wrapper that fetches the SNS list and scans a principal in one
+ * call. Useful for one-off scripts where multiple principals are not needed.
  *
- * @example
- * ```ts
- * formatTokenAmount(123456789n, 8) // => "1.23456789"
- * ```
+ * For scanning multiple principals, prefer `fetchSnsProjects` + `scanPrincipal`
+ * to avoid re-fetching the list.
+ */
+export async function scanSnsAssets(
+  principal: Principal,
+  options: FetchOptions & ScanOptions = {}
+): Promise<SnsProjectAssets[]> {
+  const projects = await fetchSnsProjects(options);
+  return scanPrincipal(principal, projects, options);
+}
+
+// ─── Utilities ─────────────────────────────────────────────────────────────
+
+/**
+ * Format a token amount from smallest units to a human-readable string.
+ * @example formatTokenAmount(123456789n, 8) // => "1.23456789"
  */
 export function formatTokenAmount(amount: bigint, decimals: number): string {
   if (decimals === 0) return amount.toString();
@@ -225,12 +226,8 @@ export function formatTokenAmount(amount: bigint, decimals: number): string {
 }
 
 /**
- * Utility: format dissolve delay seconds into a human-readable string.
- *
- * @example
- * ```ts
- * formatDuration(15897600n) // => "184 days"
- * ```
+ * Format a dissolve delay (seconds) into a human-readable string.
+ * @example formatDuration(15897600n) // => "184 days"
  */
 export function formatDuration(seconds: bigint): string {
   const s = Number(seconds);
