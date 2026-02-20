@@ -355,7 +355,9 @@ body {
   letter-spacing: 0.04em;
   padding: 2px 8px;
   text-transform: uppercase;
-  transition: border-color 0.1s, color 0.1s;
+  transition:
+    border-color 0.1s,
+    color 0.1s;
   white-space: nowrap;
 }
 .toggle-btn:hover {
@@ -452,7 +454,9 @@ body {
   letter-spacing: 0.04em;
   padding: 1px 6px;
   text-transform: uppercase;
-  transition: border-color 0.1s, color 0.1s;
+  transition:
+    border-color 0.1s,
+    color 0.1s;
 }
 .more-btn:hover {
   border-color: var(--border);
