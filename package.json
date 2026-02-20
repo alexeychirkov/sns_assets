@@ -1,0 +1,36 @@
+{
+  "name": "sns-assets",
+  "version": "0.1.0",
+  "description": "TypeScript library to scan neurons and token balances across all Dfinity SNS projects",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["dfinity", "sns", "icp", "neurons", "governance", "icrc"],
+  "license": "MIT",
+  "dependencies": {
+    "@dfinity/agent": "^2.1.3",
+    "@dfinity/candid": "^2.1.3",
+    "@dfinity/ledger-icrc": "^2.7.0",
+    "@dfinity/principal": "^2.1.3",
+    "@dfinity/sns": "^3.5.0",
+    "@dfinity/utils": "^2.7.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  }
+}
