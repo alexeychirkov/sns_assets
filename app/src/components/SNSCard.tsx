@@ -1,4 +1,4 @@
-import type { SnsProjectResult, SnsSource } from "../lib/types";
+import type { SnsProjectAssets, SnsSource } from "sns-assets";
 import { formatTokenAmount, formatDuration, shortenId } from "../lib/format";
 
 const SOURCE_BADGE: Record<SnsSource, { label: string; cls: string }> = {
@@ -8,7 +8,7 @@ const SOURCE_BADGE: Record<SnsSource, { label: string; cls: string }> = {
 };
 
 interface Props {
-  result: SnsProjectResult;
+  result: SnsProjectAssets;
 }
 
 const STATE_LABEL: Record<string, string> = {

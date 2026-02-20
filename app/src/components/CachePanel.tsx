@@ -1,6 +1,6 @@
 import type { ProjectCache } from "../lib/cache";
 import { cacheAgeMs, isCacheStale, CACHE_STALE_MS } from "../lib/cache";
-import type { SourceMode } from "../lib/types";
+import type { SourceMode } from "sns-assets";
 import { formatAge } from "../lib/format";
 import { SourceSelector } from "./SourceSelector";
 

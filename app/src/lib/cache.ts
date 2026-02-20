@@ -1,4 +1,4 @@
-import type { SnsProject, SourceMode } from "./types";
+import type { SnsProject, SourceMode } from "sns-assets";
 
 const CACHE_KEY = "sns_projects_v1";
 

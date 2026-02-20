@@ -1,4 +1,4 @@
-import type { ScanPhase } from "../lib/types";
+type ScanPhase = "idle" | "scanning" | "done" | "error";
 
 interface Props {
   phase: ScanPhase;

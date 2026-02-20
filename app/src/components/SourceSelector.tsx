@@ -1,4 +1,4 @@
-import type { SourceMode } from "../lib/types";
+import type { SourceMode } from "sns-assets";
 
 interface Props {
   value: SourceMode;

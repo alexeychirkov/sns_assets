@@ -1,18 +1,18 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { Principal } from "@dfinity/principal";
 import "./App.css";
 
-import type { ScanPhase, SourceMode, SnsProjectResult } from "./lib/types";
+import { fetchSnsProjects, scanPrincipal } from "sns-assets";
+import type { SnsProjectAssets, SourceMode } from "sns-assets";
+
 import type { ProjectCache } from "./lib/cache";
 import { loadCache, saveCache, clearCache } from "./lib/cache";
-import { fetchSnsProjects } from "./lib/sources";
-import { getAgent } from "./lib/agent";
-import { fetchNeurons } from "./lib/governance";
-import { fetchTokenBalance } from "./lib/ledger";
 import { CachePanel } from "./components/CachePanel";
 import { PrincipalInput } from "./components/PrincipalInput";
 import { ProgressPanel } from "./components/ProgressPanel";
 import { SNSCard } from "./components/SNSCard";
+
+type ScanPhase = "idle" | "scanning" | "done" | "error";
 
 const CONCURRENCY = 5;
 
@@ -28,17 +28,15 @@ export function App() {
   const [total, setTotal] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [current, setCurrent] = useState("");
-  const [results, setResults] = useState<SnsProjectResult[]>([]);
+  const [results, setResults] = useState<SnsProjectAssets[]>([]);
   const [scanError, setScanError] = useState("");
-  const abortRef = useRef(false);
 
   // ─── Load / refresh SNS list ─────────────────────────────────────────────
   async function handleLoadList() {
     setListPhase("loading");
     setListError("");
     try {
-      const agent = await getAgent();
-      const projects = await fetchSnsProjects(sourceMode, agent);
+      const projects = await fetchSnsProjects({ source: sourceMode });
       setCache(saveCache(projects, sourceMode));
       setListPhase("idle");
     } catch (err) {
@@ -58,7 +56,6 @@ export function App() {
   async function handleSearch(principal: Principal) {
     if (!cache) return;
 
-    abortRef.current = false;
     setScanPhase("scanning");
     setScanError("");
     setResults([]);
@@ -66,35 +63,22 @@ export function App() {
     setScanned(0);
     setCurrent("");
 
-    const agent = await getAgent();
-    const queue = [...cache.projects];
-    let doneCount = 0;
-
-    async function worker() {
-      while (queue.length > 0 && !abortRef.current) {
-        const project = queue.shift()!;
-        setCurrent(project.name);
-
-        const [neurons, tokenBalance] = await Promise.all([
-          fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
-          fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
-        ]);
-
-        const hasAssets = neurons.length > 0 || tokenBalance > 0n;
-        if (hasAssets) {
-          setResults((prev) => [...prev, { project, neurons, tokenBalance, hasAssets }]);
-        }
-
-        doneCount++;
-        setScanned(doneCount);
-      }
-    }
-
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, cache.projects.length) }, worker));
-
-    if (!abortRef.current) {
+    try {
+      const assets = await scanPrincipal(principal, cache.projects, {
+        concurrency: CONCURRENCY,
+        onProgress(p) {
+          if (p.phase === "scanning") {
+            setScanned(p.scanned);
+            setCurrent(p.current ?? "");
+          }
+        },
+      });
+      setResults(assets);
       setCurrent("");
       setScanPhase("done");
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : String(err));
+      setScanPhase("error");
     }
   }
 
