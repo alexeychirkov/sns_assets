@@ -182,7 +182,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
           )}
 
           {sharedNeurons.length > 0 && (
-            <div className="neuron-subsection">
+            <div className="neuron-subsection neuron-subsection--shared">
               <div className="neuron-subsection-label">Shared ({sharedNeurons.length})</div>
               <div className="neurons-list">
                 {sharedNeurons.map((n) => (
@@ -219,14 +219,6 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
         </span>
         <div className="neuron-badges">
           <span className={`neuron-state ${STATE_CLASS[n.state]}`}>{STATE_LABEL[n.state]}</span>
-          {n.isSoleOwner && (
-            <span className="badge-sole-owner" title="Only principal with ManagePrincipals">
-              sole owner
-            </span>
-          )}
-          <button className="more-btn" onClick={onToggle}>
-            {expanded ? "less" : "more"}
-          </button>
         </div>
       </div>
 
@@ -267,6 +259,12 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
           )}
         </div>
       )}
+
+      <div className="neuron-more-row">
+        <button className="more-btn" onClick={onToggle}>
+          {expanded ? "less" : "more"}
+        </button>
+      </div>
     </div>
   );
 }

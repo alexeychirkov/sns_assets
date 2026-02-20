@@ -419,6 +419,11 @@ body {
   flex-direction: column;
   gap: 4px;
 }
+.neuron-subsection--shared {
+  background: rgba(0, 0, 0, 0.025);
+  padding: 6px 8px;
+  margin: 0 -8px;
+}
 .neuron-subsection-label {
   font-size: var(--fs-xxs);
   font-weight: 700;
@@ -426,6 +431,13 @@ body {
   letter-spacing: 0.06em;
   color: var(--text-muted);
   padding: 4px 0 2px;
+}
+
+/* More / less button row at bottom of neuron */
+.neuron-more-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
 }
 
 /* More / less button on neuron */

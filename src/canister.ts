@@ -1,8 +1,8 @@
-import { Actor } from "@dfinity/agent";
-import { Principal } from "@dfinity/principal";
-import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
 import type { HttpAgent } from "@dfinity/agent";
-import type { SnsProject, FetchOptions } from "./types.js";
+import { Actor } from "@dfinity/agent";
+import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
+import { Principal } from "@dfinity/principal";
+import type { FetchOptions, SnsProject } from "./types.js";
 
 /** SNS-WASM canister on the NNS subnet */
 const SNS_WASM_CANISTER_ID = "qaa6y-5yaaa-aaaaa-aaafa-cai";
@@ -56,6 +56,7 @@ async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promi
       agent,
     });
     const entries = await canister.metadata({ certified: false });
+    console.log(`Fetched metadata for ${ledgerCanisterId}:`, entries);
     let name = ledgerCanisterId;
     let symbol = "?";
     let decimals = 8;
