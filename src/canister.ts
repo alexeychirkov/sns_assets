@@ -2,8 +2,9 @@ import type { HttpAgent } from "@dfinity/agent";
 import { Actor } from "@dfinity/agent";
 import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
 import { Principal } from "@dfinity/principal";
-import { SnsGovernanceCanister } from "@dfinity/sns";
-import type { FetchOptions, SnsProject } from "./types.js";
+import { SnsGovernanceCanister, SnsSwapCanister } from "@dfinity/sns";
+import type { FetchOptions, SnsProject } from "./types";
+import { SnsSwapLifecycle } from "./types";
 
 /** SNS-WASM canister on the NNS subnet */
 const SNS_WASM_CANISTER_ID = "qaa6y-5yaaa-aaaaa-aaafa-cai";
@@ -17,6 +18,12 @@ interface DeployedSnsRaw {
   ledger_canister_id: [] | [Principal];
   swap_canister_id: [] | [Principal];
   index_canister_id: [] | [Principal];
+}
+
+interface Icrc1MetaResult {
+  name: string;
+  symbol: string;
+  decimals: number;
 }
 
 interface SnsWasmActor {
@@ -44,13 +51,8 @@ const idlFactory = ({ IDL }: { IDL: any }) => {
   });
 };
 
-interface Icrc1Meta {
-  name: string;
-  symbol: string;
-  decimals: number;
-}
-
-async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promise<Icrc1Meta> {
+/** Returns null if the canister did not respond */
+async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promise<Icrc1MetaResult | null> {
   try {
     const canister = IcrcLedgerCanister.create({
       canisterId: Principal.fromText(ledgerCanisterId),
@@ -68,7 +70,21 @@ async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promi
     }
     return { name, symbol, decimals };
   } catch {
-    return { name: ledgerCanisterId, symbol: "?", decimals: 8 };
+    return null;
+  }
+}
+
+/** Returns null if the canister did not respond */
+async function fetchSwapLifecycle(swapCanisterId: string, agent: HttpAgent): Promise<SnsSwapLifecycle | null> {
+  try {
+    const canister = SnsSwapCanister.create({
+      canisterId: Principal.fromText(swapCanisterId),
+      agent,
+    });
+    const resp = await canister.getLifecycle({ certified: false });
+    return (resp.lifecycle[0] ?? SnsSwapLifecycle.Unspecified) as SnsSwapLifecycle;
+  } catch {
+    return null;
   }
 }
 
@@ -116,24 +132,59 @@ export async function fetchFromCanister(
       const d = queue.shift()!;
       const rootId = d.root_canister_id[0]!.toText();
       const ledgerId = d.ledger_canister_id[0]!.toText();
-
       const govId = d.governance_canister_id[0]!.toText();
-      const [meta, logoDataUrl] = await Promise.all([
+      const swapId = d.swap_canister_id[0]?.toText() ?? "";
+
+      const [meta, logo, lifecycle] = await Promise.all([
         fetchIcrc1Meta(ledgerId, agent),
         fetchGovernanceLogo(govId, agent),
+        swapId ? fetchSwapLifecycle(swapId, agent) : Promise.resolve(null),
       ]);
 
-      projects.push({
-        name: meta.name,
+      // Build a partial project — only set fields that were successfully fetched
+      const existing = projects.find((p) => p.rootCanisterId === rootId);
+      const base: SnsProject = existing ?? {
+        name: ledgerId,
         governanceCanisterId: govId,
         ledgerCanisterId: ledgerId,
         rootCanisterId: rootId,
-        tokenSymbol: meta.symbol,
-        tokenDecimals: meta.decimals,
-        logoDataUrl,
-      });
+        swapCanisterId: swapId,
+        tokenSymbol: "?",
+        tokenDecimals: 8,
+      };
 
-      options.onProgress?.({ phase: "fetching", fetched: projects.length, total });
+      const updated: SnsProject = {
+        ...base,
+        swapCanisterId: swapId || base.swapCanisterId,
+        ...(meta ? { name: meta.name, tokenSymbol: meta.symbol, tokenDecimals: meta.decimals } : {}),
+        ...(logo !== undefined ? { logoDataUrl: logo } : {}),
+        ...(lifecycle !== null ? { lifecycle } : {}),
+      };
+
+      if (existing) {
+        const idx = projects.indexOf(existing);
+        projects[idx] = updated;
+      } else {
+        projects.push(updated);
+      }
+
+      // Report which fields updated successfully
+      const progressProject: Partial<SnsProject> & { rootCanisterId: string } = {
+        rootCanisterId: rootId,
+        ...(meta ? { name: meta.name, tokenSymbol: meta.symbol, tokenDecimals: meta.decimals } : {}),
+        ...(logo !== undefined ? { logoDataUrl: logo } : {}),
+        ...(lifecycle !== null ? { lifecycle } : {}),
+      };
+
+      options.onProgress?.({
+        phase: "fetching",
+        fetched: projects.length,
+        total,
+        project: progressProject,
+        metaOk: meta !== null,
+        logoOk: logo !== undefined,
+        lifecycleOk: lifecycle !== null,
+      });
     }
   }
 

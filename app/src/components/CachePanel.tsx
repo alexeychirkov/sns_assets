@@ -1,31 +1,30 @@
 import type { ProjectCache } from "../lib/cache";
-import { CACHE_STALE_MS, cacheAgeMs, isCacheStale } from "../lib/cache";
+import { cacheAgeMs, isCacheStale } from "../lib/cache";
 import { formatAge } from "../lib/format";
 
 interface Props {
-  cache: ProjectCache | null;
+  cache: ProjectCache;
   loadPhase: "idle" | "loading" | "error";
   loadError: string;
   fetchFetched: number;
   fetchTotal: number;
   onLoad: () => void;
-  onClear: () => void;
+  onReset: () => void;
   disabled: boolean;
 }
 
-export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTotal, onLoad, onClear, disabled }: Props) {
+export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTotal, onLoad, onReset, disabled }: Props) {
   const isLoading = loadPhase === "loading";
   const fetchPct = fetchTotal > 0 ? Math.round((fetchFetched / fetchTotal) * 100) : 0;
-  const stale = cache ? isCacheStale(cache) : false;
-  const age = cache ? cacheAgeMs(cache) : 0;
+  const stale = isCacheStale(cache);
+  const age = cacheAgeMs(cache);
 
   return (
     <div className="cache-panel">
       <div className="cache-panel-header">
         <span className="cache-panel-title">SNS Projects</span>
 
-        {cache && (
-          <div className="cache-meta">
+        <div className="cache-meta">
             <span className={`cache-count${stale ? " cache-stale" : ""}`}>
               {cache.projects.length} projects
             </span>
@@ -34,7 +33,6 @@ export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTot
               {stale ? <>⚠ stale ({formatAge(age)})</> : formatAge(age)}
             </span>
           </div>
-        )}
       </div>
 
       <div className="cache-controls">
@@ -45,21 +43,21 @@ export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTot
                 <span className="spinner" />
                 Loading…
               </>
-            ) : cache ? (
+            ) : stale ? (
               "Refresh list"
             ) : (
-              "Load list"
+              "Fetch latest"
             )}
           </button>
 
-          {cache && !isLoading && (
+          {!isLoading && (
             <button
               className="cache-clear-btn"
-              onClick={onClear}
+              onClick={onReset}
               disabled={disabled}
-              title="Clear cache"
+              title="Reset to built-in snapshot"
             >
-              ✕
+              ↺
             </button>
           )}
         </div>
@@ -83,10 +81,9 @@ export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTot
         </div>
       )}
 
-      {!cache && loadPhase === "idle" && (
+      {!stale && loadPhase === "idle" && (
         <p className="cache-hint">
-          Load the SNS project list once — then scan any number of principals without re-fetching.{" "}
-          <span className="cache-hint-ttl">Cache is valid for {CACHE_STALE_MS / 3600000} h.</span>
+          Project list is loaded from a built-in snapshot. Press <strong>Fetch latest</strong> to pull the current list from the IC network.
         </p>
       )}
 

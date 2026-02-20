@@ -2,8 +2,8 @@ import { Principal } from "@dfinity/principal";
 import { SnsGovernanceCanister } from "@dfinity/sns";
 import type { HttpAgent } from "@dfinity/agent";
 import type { SnsNeuron } from "@dfinity/sns";
-import type { NeuronState, SnsNeuronInfo, NeuronPermission } from "./types.js";
-import { NeuronPermissionType } from "./types.js";
+import type { NeuronState, SnsNeuronInfo, NeuronPermission } from "./types";
+import { NeuronPermissionType } from "./types";
 
 function neuronIdToHex(id: Uint8Array | number[]): string {
   return Array.from(id)

@@ -1,5 +1,20 @@
 import type { Principal } from "@dfinity/principal";
 
+// ─── SNS Swap Lifecycle ────────────────────────────────────────────────────
+
+/**
+ * Mirrors `SnsSwapLifecycle` from `@dfinity/sns`.
+ * Committed (3) means the SNS swap completed successfully — project is live.
+ */
+export enum SnsSwapLifecycle {
+  Unspecified = 0,
+  Pending = 1,
+  Open = 2,
+  Committed = 3,
+  Aborted = 4,
+  Adopted = 5,
+}
+
 // ─── SNS Project ───────────────────────────────────────────────────────────
 
 /**
@@ -16,8 +31,11 @@ export interface SnsProject {
   governanceCanisterId: string;
   ledgerCanisterId: string;
   rootCanisterId: string;
+  swapCanisterId: string;
   tokenSymbol: string;
   tokenDecimals: number;
+  /** Swap lifecycle state. Committed = project is live. */
+  lifecycle?: SnsSwapLifecycle;
   /** Data URI for the project logo fetched from governance get_metadata */
   logoDataUrl?: string;
 }
@@ -123,6 +141,14 @@ export interface SnsProjectAssets {
   totalValue: bigint;
 }
 
+/** Result of scanning a principal across all SNS projects */
+export interface ScanResult {
+  /** Projects where assets were found (or all, if includeEmpty=true) */
+  assets: SnsProjectAssets[];
+  /** Projects where governance or ledger canister failed to respond */
+  failed: ScanProjectError[];
+}
+
 // ─── Progress ──────────────────────────────────────────────────────────────
 
 export type FetchPhase = "fetching" | "done" | "error";
@@ -134,7 +160,30 @@ export interface FetchProgress {
   fetched: number;
   /** Total projects to enrich (known after list_deployed_snses returns) */
   total: number;
+  /**
+   * Present when a project was just processed.
+   * Contains only the fields that were successfully fetched (partial update).
+   */
+  project?: Partial<SnsProject> & { rootCanisterId: string };
+  /** Whether ICRC-1 metadata (name/symbol/decimals) was fetched successfully */
+  metaOk?: boolean;
+  /** Whether logo was fetched successfully */
+  logoOk?: boolean;
+  /** Whether swap lifecycle was fetched successfully */
+  lifecycleOk?: boolean;
   error?: string;
+}
+
+// ─── Scan errors ───────────────────────────────────────────────────────────
+
+/** Describes a project that could not be fully scanned */
+export interface ScanProjectError {
+  project: SnsProject;
+  /** Governance canister failed to respond */
+  governanceFailed: boolean;
+  /** Ledger canister failed to respond */
+  ledgerFailed: boolean;
+  error: string;
 }
 
 export interface ScanProgress {

@@ -746,3 +746,74 @@ body {
   font-size: var(--fs);
   border: 1px solid var(--border-light);
 }
+
+/* ─── Failed Projects Panel ──────────────────────────────────────────────── */
+.failed-panel {
+  border: 1px solid var(--warn, #b45309);
+  background: color-mix(in srgb, var(--warn, #b45309) 6%, var(--bg));
+}
+
+.failed-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--warn, #b45309);
+}
+.failed-panel-header:hover {
+  opacity: 0.85;
+}
+
+.failed-panel-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.failed-panel-title {
+  flex: 1;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.failed-panel-chevron {
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+.failed-panel-chevron--open {
+  transform: rotate(90deg);
+}
+
+.failed-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--warn, #b45309) 20%, transparent);
+}
+
+.failed-panel-item {
+  padding-top: 8px;
+}
+.failed-project-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.failed-project-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+}
+.failed-reason {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}

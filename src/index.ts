@@ -3,16 +3,19 @@ import { getAgent } from "./agent.js";
 import { fetchFromCanister } from "./canister.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
-import type { FetchOptions, ScanOptions, SnsNeuronInfo, SnsProject, SnsProjectAssets, SnsProjectCumulative } from "./types.js";
+
+import type { FetchOptions, ScanOptions, ScanProjectError, ScanResult, SnsNeuronInfo, SnsProject, SnsProjectAssets, SnsProjectCumulative } from "./types";
+import { SnsSwapLifecycle } from "./types";
 
 // ─── Public type exports ───────────────────────────────────────────────────
 
 export type {
-  FetchOptions, FetchPhase, FetchProgress, NeuronCumulative, NeuronPermission, NeuronState, ScanOptions, ScanPhase, ScanProgress, SnsNeuronInfo, SnsProject,
+  FetchOptions, FetchPhase, FetchProgress, NeuronCumulative, NeuronPermission, NeuronState, ScanOptions, ScanPhase, ScanProgress, ScanProjectError, ScanResult, SnsNeuronInfo, SnsProject,
   SnsProjectAssets, SnsProjectCumulative
 } from "./types.js";
 
-export { getNeuronPermissionName, NeuronPermissionType } from "./types.js";
+export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot.js";
+export { getNeuronPermissionName, NeuronPermissionType, SnsSwapLifecycle } from "./types.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -32,6 +35,16 @@ function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
     total: sum(neurons),
     owner: sum(neurons.filter((n) => n.isSoleOwner)),
   };
+}
+
+// ─── Utilities ─────────────────────────────────────────────────────────────
+
+/**
+ * Filter projects to only those with a Committed lifecycle (swap succeeded, project is live).
+ * Projects without a lifecycle field set are excluded.
+ */
+export function filterLaunchedProjects(projects: SnsProject[]): SnsProject[] {
+  return projects.filter((p) => p.lifecycle === SnsSwapLifecycle.Committed);
 }
 
 // ─── Phase 1: Fetch SNS project list ──────────────────────────────────────
@@ -85,7 +98,7 @@ export async function scanPrincipal(
   principal: Principal,
   projects: SnsProject[],
   options: ScanOptions = {}
-): Promise<SnsProjectAssets[]> {
+): Promise<ScanResult> {
   const {
     host = DEFAULT_HOST,
     concurrency = DEFAULT_CONCURRENCY,
@@ -97,23 +110,50 @@ export async function scanPrincipal(
   let scanned = 0;
 
   const agent = await getAgent(host);
-  const results: SnsProjectAssets[] = [];
+  const assets: SnsProjectAssets[] = [];
+  const failed: ScanProjectError[] = [];
   const queue = [...projects];
 
   async function worker(): Promise<void> {
     while (queue.length > 0) {
       const project = queue.shift()!;
 
-      const [neurons, tokenBalance] = await Promise.all([
-        fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
-        fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
+      let neurons: SnsNeuronInfo[] = [];
+      let tokenBalance = 0n;
+      let governanceFailed = false;
+      let ledgerFailed = false;
+      let errorMsg = "";
+
+      const [neuronsResult, balanceResult] = await Promise.allSettled([
+        fetchNeurons(project.governanceCanisterId, principal, agent),
+        fetchTokenBalance(project.ledgerCanisterId, principal, agent),
       ]);
+
+      if (neuronsResult.status === "fulfilled") {
+        neurons = neuronsResult.value;
+      } else {
+        governanceFailed = true;
+        errorMsg = neuronsResult.reason instanceof Error ? neuronsResult.reason.message : String(neuronsResult.reason);
+      }
+
+      if (balanceResult.status === "fulfilled") {
+        tokenBalance = balanceResult.value;
+      } else {
+        ledgerFailed = true;
+        if (!errorMsg) {
+          errorMsg = balanceResult.reason instanceof Error ? balanceResult.reason.message : String(balanceResult.reason);
+        }
+      }
+
+      if (governanceFailed || ledgerFailed) {
+        failed.push({ project, governanceFailed, ledgerFailed, error: errorMsg });
+      }
 
       const hasAssets = neurons.length > 0 || tokenBalance > 0n;
       if (includeEmpty || hasAssets) {
         const cumulative = computeCumulative(neurons);
         const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
-        results.push({ project, neurons, tokenBalance, hasAssets, cumulative, totalValue });
+        assets.push({ project, neurons, tokenBalance, hasAssets, cumulative, totalValue });
       }
 
       scanned++;
@@ -124,7 +164,7 @@ export async function scanPrincipal(
   await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, worker));
   onProgress?.({ phase: "done", total, scanned });
 
-  return results;
+  return { assets, failed };
 }
 
 // ─── Convenience: both phases in one call ─────────────────────────────────
@@ -136,7 +176,7 @@ export async function scanPrincipal(
 export async function scanSnsAssets(
   principal: Principal,
   options: FetchOptions & ScanOptions = {}
-): Promise<SnsProjectAssets[]> {
+): Promise<ScanResult> {
   const projects = await fetchSnsProjects(options);
   return scanPrincipal(principal, projects, options);
 }
