@@ -3,27 +3,16 @@ import { getAgent } from "./agent.js";
 import { fetchFromCanister } from "./canister.js";
 import { fetchNeurons } from "./governance.js";
 import { fetchTokenBalance } from "./ledger.js";
-import type { FetchOptions, ScanOptions, SnsProject, SnsProjectAssets, SnsNeuronInfo, SnsProjectCumulative } from "./types.js";
+import type { FetchOptions, ScanOptions, SnsNeuronInfo, SnsProject, SnsProjectAssets, SnsProjectCumulative } from "./types.js";
 
 // ─── Public type exports ───────────────────────────────────────────────────
 
 export type {
-  FetchOptions,
-  FetchProgress,
-  FetchPhase,
-  ScanOptions,
-  ScanProgress,
-  ScanPhase,
-  SnsProject,
-  SnsProjectAssets,
-  SnsNeuronInfo,
-  NeuronState,
-  NeuronPermission,
-  NeuronCumulative,
-  SnsProjectCumulative,
+  FetchOptions, FetchPhase, FetchProgress, NeuronCumulative, NeuronPermission, NeuronState, ScanOptions, ScanPhase, ScanProgress, SnsNeuronInfo, SnsProject,
+  SnsProjectAssets, SnsProjectCumulative
 } from "./types.js";
 
-export { NeuronPermissionType, getNeuronPermissionName } from "./types.js";
+export { getNeuronPermissionName, NeuronPermissionType } from "./types.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -136,76 +125,6 @@ export async function scanPrincipal(
   onProgress?.({ phase: "done", total, scanned });
 
   return results;
-}
-
-/**
- * Async-generator variant of `scanPrincipal` — yields each result as it
- * arrives, useful for streaming updates to a UI.
- */
-export async function* streamPrincipal(
-  principal: Principal,
-  projects: SnsProject[],
-  options: Omit<ScanOptions, "onProgress"> = {}
-): AsyncGenerator<SnsProjectAssets> {
-  const { host = DEFAULT_HOST, concurrency = DEFAULT_CONCURRENCY } = options;
-
-  const agent = await getAgent(host);
-  const queue = [...projects];
-
-  const buffer: SnsProjectAssets[] = [];
-  let done = false;
-  let resolveNext: (() => void) | undefined;
-
-  function notify() {
-    if (resolveNext) {
-      const r = resolveNext;
-      resolveNext = undefined;
-      r();
-    }
-  }
-
-  const workerPromises = Array.from(
-    { length: Math.min(concurrency, projects.length) },
-    async () => {
-      while (queue.length > 0) {
-        const project = queue.shift()!;
-
-        const [neurons, tokenBalance] = await Promise.all([
-          fetchNeurons(project.governanceCanisterId, principal, agent).catch(() => []),
-          fetchTokenBalance(project.ledgerCanisterId, principal, agent).catch(() => 0n),
-        ]);
-
-        const cumulative = computeCumulative(neurons);
-        const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
-        buffer.push({
-          project,
-          neurons,
-          tokenBalance,
-          hasAssets: neurons.length > 0 || tokenBalance > 0n,
-          cumulative,
-          totalValue,
-        });
-        notify();
-      }
-    }
-  );
-
-  Promise.all(workerPromises).then(() => {
-    done = true;
-    notify();
-  });
-
-  while (!done || buffer.length > 0) {
-    if (buffer.length > 0) {
-      yield buffer.shift()!;
-    } else {
-      await new Promise<void>((r) => {
-        resolveNext = r;
-      });
-    }
-  }
-
-  while (buffer.length > 0) yield buffer.shift()!;
 }
 
 // ─── Convenience: both phases in one call ─────────────────────────────────
