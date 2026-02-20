@@ -37,13 +37,5 @@ export interface SnsProjectResult {
   hasAssets: boolean;
 }
 
-export type ScanPhase = "idle" | "fetching-list" | "scanning" | "done" | "error";
-
-export interface ScanState {
-  phase: ScanPhase;
-  total: number;
-  scanned: number;
-  current: string;
-  results: SnsProjectResult[];
-  error: string;
-}
+/** Phase of a per-principal scan (list loading is handled separately via CachePanel) */
+export type ScanPhase = "idle" | "scanning" | "done" | "error";

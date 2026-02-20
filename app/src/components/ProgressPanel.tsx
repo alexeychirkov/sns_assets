@@ -15,13 +15,6 @@ export function ProgressPanel({ phase, total, scanned, current, foundCount }: Pr
 
   return (
     <div className="progress-panel">
-      {phase === "fetching-list" && (
-        <div className="progress-status">
-          <span className="spinner" />
-          Загружаю список SNS проектов…
-        </div>
-      )}
-
       {(phase === "scanning" || phase === "done") && (
         <>
           <div className="progress-header">

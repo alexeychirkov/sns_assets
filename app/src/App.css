@@ -466,6 +466,134 @@ body {
   color: var(--success);
 }
 
+/* ─── Cache panel ───────────────────────────────────────────────────────── */
+.cache-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cache-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cache-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cache-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.cache-count {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.cache-dot {
+  color: var(--text-muted);
+}
+.cache-age {
+  color: var(--text-muted);
+}
+.cache-source {
+  color: var(--text-muted);
+}
+.cache-stale {
+  color: var(--warn) !important;
+}
+
+.cache-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* source selector inside cache-panel sits inline with buttons */
+.cache-controls .source-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.cache-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.cache-load-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.cache-load-btn:hover:not(:disabled) {
+  background: #6d28d9;
+}
+.cache-load-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cache-clear-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 7px 10px;
+  line-height: 1;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.cache-clear-btn:hover:not(:disabled) {
+  border-color: var(--error);
+  color: var(--error);
+}
+.cache-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cache-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.cache-hint-ttl {
+  opacity: 0.7;
+}
+
+.cache-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
 /* ─── Misc ──────────────────────────────────────────────────────────────── */
 .global-error {
   background: rgba(239, 68, 68, 0.1);

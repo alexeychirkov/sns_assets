@@ -3,54 +3,71 @@ import type { Principal } from "@dfinity/principal";
 import "./App.css";
 
 import type { ScanPhase, SourceMode, SnsProjectResult } from "./lib/types";
+import type { ProjectCache } from "./lib/cache";
+import { loadCache, saveCache, clearCache } from "./lib/cache";
 import { fetchSnsProjects } from "./lib/sources";
 import { getAgent } from "./lib/agent";
 import { fetchNeurons } from "./lib/governance";
 import { fetchTokenBalance } from "./lib/ledger";
+import { CachePanel } from "./components/CachePanel";
 import { PrincipalInput } from "./components/PrincipalInput";
 import { ProgressPanel } from "./components/ProgressPanel";
-import { SourceSelector } from "./components/SourceSelector";
 import { SNSCard } from "./components/SNSCard";
 
 const CONCURRENCY = 5;
 
 export function App() {
-  const [phase, setPhase] = useState<ScanPhase>("idle");
+  // ─── SNS project list (shared, cached) ──────────────────────────────────
+  const [cache, setCache] = useState<ProjectCache | null>(() => loadCache());
+  const [listPhase, setListPhase] = useState<"idle" | "loading" | "error">("idle");
+  const [listError, setListError] = useState("");
   const [sourceMode, setSourceMode] = useState<SourceMode>("both");
+
+  // ─── Per-principal scan ──────────────────────────────────────────────────
+  const [scanPhase, setScanPhase] = useState<ScanPhase>("idle");
   const [total, setTotal] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [current, setCurrent] = useState("");
   const [results, setResults] = useState<SnsProjectResult[]>([]);
-  const [error, setError] = useState("");
+  const [scanError, setScanError] = useState("");
   const abortRef = useRef(false);
 
+  // ─── Load / refresh SNS list ─────────────────────────────────────────────
+  async function handleLoadList() {
+    setListPhase("loading");
+    setListError("");
+    try {
+      const agent = await getAgent();
+      const projects = await fetchSnsProjects(sourceMode, agent);
+      setCache(saveCache(projects, sourceMode));
+      setListPhase("idle");
+    } catch (err) {
+      setListError(err instanceof Error ? err.message : String(err));
+      setListPhase("error");
+    }
+  }
+
+  function handleClearCache() {
+    clearCache();
+    setCache(null);
+    setListPhase("idle");
+    setListError("");
+  }
+
+  // ─── Scan a principal against the cached list ────────────────────────────
   async function handleSearch(principal: Principal) {
+    if (!cache) return;
+
     abortRef.current = false;
-    setPhase("fetching-list");
+    setScanPhase("scanning");
+    setScanError("");
     setResults([]);
-    setError("");
-    setTotal(0);
+    setTotal(cache.projects.length);
     setScanned(0);
     setCurrent("");
 
     const agent = await getAgent();
-
-    let projects;
-    try {
-      projects = await fetchSnsProjects(sourceMode, agent);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setPhase("error");
-      return;
-    }
-
-    if (abortRef.current) return;
-
-    setTotal(projects.length);
-    setPhase("scanning");
-
-    const queue = [...projects];
-    // scanned counter shared across workers via closure + ref
+    const queue = [...cache.projects];
     let doneCount = 0;
 
     async function worker() {
@@ -64,7 +81,6 @@ export function App() {
         ]);
 
         const hasAssets = neurons.length > 0 || tokenBalance > 0n;
-
         if (hasAssets) {
           setResults((prev) => [...prev, { project, neurons, tokenBalance, hasAssets }]);
         }
@@ -74,15 +90,16 @@ export function App() {
       }
     }
 
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, projects.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, cache.projects.length) }, worker));
 
     if (!abortRef.current) {
       setCurrent("");
-      setPhase("done");
+      setScanPhase("done");
     }
   }
 
-  const isRunning = phase === "fetching-list" || phase === "scanning";
+  const isScanning = scanPhase === "scanning";
+  const isBusy = isScanning || listPhase === "loading";
 
   return (
     <div className="app">
@@ -92,35 +109,53 @@ export function App() {
       </header>
 
       <main className="app-main">
-        <SourceSelector value={sourceMode} onChange={setSourceMode} disabled={isRunning} />
-        <PrincipalInput onSearch={handleSearch} disabled={isRunning} />
-
-        <ProgressPanel
-          phase={phase}
-          total={total}
-          scanned={scanned}
-          current={current}
-          foundCount={results.length}
+        {/* Step 1 — load the SNS project list once */}
+        <CachePanel
+          cache={cache}
+          loadPhase={listPhase}
+          loadError={listError}
+          sourceMode={sourceMode}
+          onSourceChange={setSourceMode}
+          onLoad={handleLoadList}
+          onClear={handleClearCache}
+          disabled={isScanning}
         />
 
-        {error && <div className="global-error">{error}</div>}
+        {/* Step 2 — scan any principal against the cached list */}
+        {cache && (
+          <>
+            <PrincipalInput onSearch={handleSearch} disabled={isBusy} />
 
-        {results.length > 0 && (
-          <section className="results-section">
-            <h2 className="results-heading">
-              Найдено в {results.length} проект
-              {results.length === 1 ? "е" : results.length < 5 ? "ах" : "ах"}
-            </h2>
-            <div className="results-grid">
-              {results.map((r) => (
-                <SNSCard key={r.project.rootCanisterId} result={r} />
-              ))}
-            </div>
-          </section>
-        )}
+            <ProgressPanel
+              phase={scanPhase}
+              total={total}
+              scanned={scanned}
+              current={current}
+              foundCount={results.length}
+            />
 
-        {phase === "done" && results.length === 0 && (
-          <div className="empty-state">Нейронов и токенов не найдено ни в одном SNS проекте</div>
+            {scanError && <div className="global-error">{scanError}</div>}
+
+            {results.length > 0 && (
+              <section className="results-section">
+                <h2 className="results-heading">
+                  Найдено в {results.length} проект
+                  {results.length === 1 ? "е" : "ах"}
+                </h2>
+                <div className="results-grid">
+                  {results.map((r) => (
+                    <SNSCard key={r.project.rootCanisterId} result={r} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {scanPhase === "done" && results.length === 0 && (
+              <div className="empty-state">
+                Нейронов и токенов не найдено ни в одном SNS проекте
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
