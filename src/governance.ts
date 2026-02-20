@@ -2,7 +2,8 @@ import { Principal } from "@dfinity/principal";
 import { SnsGovernanceCanister } from "@dfinity/sns";
 import type { HttpAgent } from "@dfinity/agent";
 import type { SnsNeuron } from "@dfinity/sns";
-import type { NeuronState, SnsNeuronInfo } from "./types.js";
+import type { NeuronState, SnsNeuronInfo, NeuronPermission } from "./types.js";
+import { NeuronPermissionType } from "./types.js";
 
 function neuronIdToHex(id: Uint8Array | number[]): string {
   return Array.from(id)
@@ -67,14 +68,29 @@ export async function fetchNeurons(
     const rawId = n.id[0];
     const { state, dissolveDelaySeconds, dissolveAt } = resolveDissolveState(n);
 
+    const permissions: NeuronPermission[] = n.permissions.map((p) => ({
+      principal: p.principal[0]?.toText() ?? null,
+      permission_type: Array.from(p.permission_type) as NeuronPermissionType[],
+    }));
+
+    const stakedMaturityE8s = n.staked_maturity_e8s_equivalent[0] ?? 0n;
+    const totalDisbursingMaturity = n.disburse_maturity_in_progress.reduce(
+      (acc, d) => acc + d.amount_e8s,
+      0n
+    );
+    const totalMaturityE8s = n.maturity_e8s_equivalent + stakedMaturityE8s + totalDisbursingMaturity;
+
     return {
       id: rawId ? neuronIdToHex(rawId.id) : "unknown",
       stakeE8s: n.cached_neuron_stake_e8s,
       maturityE8s: n.maturity_e8s_equivalent,
+      stakedMaturityE8s,
+      totalMaturityE8s,
       state,
       dissolveDelaySeconds,
       dissolveAt,
       votingPowerPercentageMultiplier: n.voting_power_percentage_multiplier,
+      permissions,
     };
   });
 }

@@ -24,6 +24,7 @@ export function App() {
 
   // ─── Per-principal scan ──────────────────────────────────────────────────
   const [scanPhase, setScanPhase] = useState<ScanPhase>("idle");
+  const [scannedPrincipal, setScannedPrincipal] = useState("");
   const [total, setTotal] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [current, setCurrent] = useState("");
@@ -58,6 +59,7 @@ export function App() {
     setScanPhase("scanning");
     setScanError("");
     setResults([]);
+    setScannedPrincipal(principal.toText());
     setTotal(cache.projects.length);
     setScanned(0);
     setCurrent("");
@@ -125,7 +127,7 @@ export function App() {
                 </h2>
                 <div className="results-grid">
                   {results.map((r) => (
-                    <SNSCard key={r.project.rootCanisterId} result={r} />
+                    <SNSCard key={r.project.rootCanisterId} result={r} scannedPrincipal={scannedPrincipal} />
                   ))}
                 </div>
               </section>

@@ -29,6 +29,12 @@ export function formatDuration(seconds: bigint): string {
   return secondsToDuration({ seconds, i18n: i18nSecondsToDurationShort });
 }
 
+export function formatDays(seconds: bigint): string {
+  if (seconds <= 0n) return "—";
+  const days = Math.floor(Number(seconds) / 86400);
+  return `${days} d`;
+}
+
 export function shortenId(hex: string): string {
   if (hex.length <= 12) return hex;
   return `${hex.slice(0, 6)}…${hex.slice(-6)}`;

@@ -18,7 +18,10 @@ export type {
   SnsProjectAssets,
   SnsNeuronInfo,
   NeuronState,
+  NeuronPermission,
 } from "./types.js";
+
+export { NeuronPermissionType, getNeuronPermissionName } from "./types.js";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 

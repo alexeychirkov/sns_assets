@@ -24,19 +24,62 @@ export interface SnsProject {
 
 export type NeuronState = "locked" | "dissolving" | "dissolved";
 
+export enum NeuronPermissionType {
+  Unspecified = 0,
+  ConfigureDissolveState = 1,
+  ManagePrincipals = 2,
+  SubmitProposal = 3,
+  Vote = 4,
+  Disburse = 5,
+  Split = 6,
+  MergeMaturity = 7,
+  DisburseMaturity = 8,
+  StakeMaturity = 9,
+  ManageVotingPermission = 10,
+}
+
+export const getNeuronPermissionName = (value: number): string => {
+  switch (value) {
+    case NeuronPermissionType.Unspecified: return "Unspecified";
+    case NeuronPermissionType.ConfigureDissolveState: return "ConfigureDissolveState";
+    case NeuronPermissionType.ManagePrincipals: return "ManagePrincipals";
+    case NeuronPermissionType.SubmitProposal: return "SubmitProposal";
+    case NeuronPermissionType.Vote: return "Vote";
+    case NeuronPermissionType.Disburse: return "Disburse";
+    case NeuronPermissionType.Split: return "Split";
+    case NeuronPermissionType.MergeMaturity: return "MergeMaturity";
+    case NeuronPermissionType.DisburseMaturity: return "DisburseMaturity";
+    case NeuronPermissionType.StakeMaturity: return "StakeMaturity";
+    case NeuronPermissionType.ManageVotingPermission: return "ManageVotingPermission";
+    default: return "Unknown Permission";
+  }
+};
+
+export interface NeuronPermission {
+  /** Text representation of the principal, or null if the field is absent */
+  principal: string | null;
+  permission_type: NeuronPermissionType[];
+}
+
 export interface SnsNeuronInfo {
   /** Hex-encoded neuron ID */
   id: string;
-  /** Staked amount in smallest token units */
+  /** Staked amount in smallest token units (cached_neuron_stake_e8s) */
   stakeE8s: bigint;
-  /** Accrued maturity in smallest token units */
+  /** Available maturity in smallest token units */
   maturityE8s: bigint;
+  /** Staked maturity in smallest token units */
+  stakedMaturityE8s: bigint;
+  /** Total maturity = available + staked + disbursing */
+  totalMaturityE8s: bigint;
   state: NeuronState;
   /** Remaining dissolve delay in seconds */
   dissolveDelaySeconds: bigint;
   /** Unix timestamp (seconds) when the neuron dissolves; only if dissolving */
   dissolveAt?: bigint;
   votingPowerPercentageMultiplier: bigint;
+  /** Full permissions list from the governance canister */
+  permissions: NeuronPermission[];
 }
 
 // ─── Results ───────────────────────────────────────────────────────────────

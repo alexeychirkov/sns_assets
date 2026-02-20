@@ -23,13 +23,32 @@
   --error: #dc2626;
   --error-bg: #fef2f2;
   --radius: 0px;
+
+  /* ─── Typography scale ─────────────────────────────────────────────────
+     Change --fs to scale the entire UI.
+     All font-size values are derived from it via calc().
+       --fs-xxl  = --fs + 9px  (22px) — page title
+       --fs-xl   = --fs + 7px  (20px) — token balance
+       --fs-lg   = --fs + 1px  (14px) — card name, logo letter
+       --fs      = 13px        (13px) — body / inputs / buttons
+       --fs-sm   = --fs - 1px  (12px) — secondary text, small buttons
+       --fs-xs   = --fs - 2px  (11px) — meta, IDs, hints
+       --fs-xxs  = --fs - 3px  (10px) — labels, badges, section titles
+  ─────────────────────────────────────────────────────────────────────── */
+  --fs: 15px;
+  --fs-xxl: calc(var(--fs) + 9px);
+  --fs-xl: calc(var(--fs) + 7px);
+  --fs-lg: calc(var(--fs) + 1px);
+  --fs-sm: calc(var(--fs) - 1px);
+  --fs-xs: calc(var(--fs) - 2px);
+  --fs-xxs: calc(var(--fs) - 3px);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
-  font-size: 13px;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "Courier", "monospace";
+  font-size: var(--fs);
   line-height: 1.5;
   min-height: 100vh;
 }
@@ -47,7 +66,7 @@ body {
   padding-bottom: 16px;
 }
 .app-title {
-  font-size: 22px;
+  font-size: var(--fs-xxl);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -55,7 +74,7 @@ body {
 }
 .app-subtitle {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin-top: 4px;
 }
 
@@ -83,7 +102,7 @@ body {
   border-right: none;
   color: var(--text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs);
   padding: 9px 12px;
   outline: none;
   transition: background 0.1s;
@@ -108,7 +127,7 @@ body {
   color: var(--bg);
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs);
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 9px 20px;
@@ -126,7 +145,7 @@ body {
 
 .input-error-msg {
   color: var(--error);
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 /* ─── Progress panel ────────────────────────────────────────────────────── */
@@ -149,7 +168,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .progress-label {
   color: var(--text-muted);
@@ -179,13 +198,13 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 
 .progress-error {
   color: var(--error);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 /* ─── Spinner ───────────────────────────────────────────────────────────── */
@@ -212,7 +231,7 @@ body {
   gap: 12px;
 }
 .results-heading {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -250,7 +269,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-lg);
   flex-shrink: 0;
   text-transform: uppercase;
 }
@@ -260,7 +279,7 @@ body {
   gap: 2px;
 }
 .sns-name {
-  font-size: 14px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -275,7 +294,7 @@ body {
   gap: 6px;
 }
 .section-label {
-  font-size: 10px;
+  font-size: var(--fs-xxs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -289,12 +308,12 @@ body {
   gap: 6px;
 }
 .balance-amount {
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 700;
   color: var(--text);
 }
 .balance-symbol {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-muted);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -324,12 +343,17 @@ body {
   justify-content: space-between;
   gap: 8px;
 }
+.neuron-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .neuron-id {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 .neuron-state {
-  font-size: 10px;
+  font-size: var(--fs-xxs);
   font-weight: 700;
   padding: 2px 7px;
   letter-spacing: 0.06em;
@@ -351,6 +375,37 @@ body {
   background: var(--surface2);
 }
 
+.badge-shared {
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: help;
+}
+.badge-no-control {
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: help;
+}
+.badge-sole-owner {
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: help;
+}
+
 .neuron-details {
   display: flex;
   flex-wrap: wrap;
@@ -360,11 +415,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
 }
 .detail-label {
-  font-size: 10px;
+  font-size: var(--fs-xxs);
   font-weight: 400;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -388,7 +443,7 @@ body {
   gap: 8px;
 }
 .cache-panel-title {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -399,7 +454,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .cache-count {
   font-weight: 700;
@@ -436,7 +491,7 @@ body {
   color: var(--bg);
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 7px 16px;
@@ -459,10 +514,12 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 6px 10px;
   line-height: 1;
-  transition: color 0.1s, border-color 0.1s;
+  transition:
+    color 0.1s,
+    border-color 0.1s;
 }
 .cache-clear-btn:hover:not(:disabled) {
   border-color: var(--error);
@@ -474,7 +531,7 @@ body {
 }
 
 .cache-hint {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
   line-height: 1.6;
 }
@@ -486,7 +543,7 @@ body {
   border: 1px solid var(--error);
   background: var(--error-bg);
   color: var(--error);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 8px 10px;
 }
 
@@ -496,12 +553,12 @@ body {
   background: var(--error-bg);
   color: var(--error);
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .empty-state {
   text-align: center;
   color: var(--text-muted);
   padding: 40px 0;
-  font-size: 13px;
+  font-size: var(--fs);
   border: 1px solid var(--border-light);
 }
