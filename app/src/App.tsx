@@ -2,19 +2,21 @@ import { useRef, useState } from "react";
 import type { Principal } from "@dfinity/principal";
 import "./App.css";
 
-import type { ScanPhase, SnsProjectResult } from "./lib/types";
-import { fetchAllSnsProjects } from "./lib/aggregator";
+import type { ScanPhase, SourceMode, SnsProjectResult } from "./lib/types";
+import { fetchSnsProjects } from "./lib/sources";
 import { getAgent } from "./lib/agent";
 import { fetchNeurons } from "./lib/governance";
 import { fetchTokenBalance } from "./lib/ledger";
 import { PrincipalInput } from "./components/PrincipalInput";
 import { ProgressPanel } from "./components/ProgressPanel";
+import { SourceSelector } from "./components/SourceSelector";
 import { SNSCard } from "./components/SNSCard";
 
 const CONCURRENCY = 5;
 
 export function App() {
   const [phase, setPhase] = useState<ScanPhase>("idle");
+  const [sourceMode, setSourceMode] = useState<SourceMode>("both");
   const [total, setTotal] = useState(0);
   const [scanned, setScanned] = useState(0);
   const [current, setCurrent] = useState("");
@@ -31,9 +33,11 @@ export function App() {
     setScanned(0);
     setCurrent("");
 
+    const agent = await getAgent();
+
     let projects;
     try {
-      projects = await fetchAllSnsProjects();
+      projects = await fetchSnsProjects(sourceMode, agent);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase("error");
@@ -45,7 +49,6 @@ export function App() {
     setTotal(projects.length);
     setPhase("scanning");
 
-    const agent = await getAgent();
     const queue = [...projects];
     // scanned counter shared across workers via closure + ref
     let doneCount = 0;
@@ -100,6 +103,11 @@ export function App() {
       </header>
 
       <main className="app-main">
+        <SourceSelector
+          value={sourceMode}
+          onChange={setSourceMode}
+          disabled={isRunning}
+        />
         <PrincipalInput onSearch={handleSearch} disabled={isRunning} />
 
         <ProgressPanel

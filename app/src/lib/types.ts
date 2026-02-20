@@ -1,3 +1,9 @@
+/** Where the SNS root canister info was discovered */
+export type SnsSource = "canister" | "aggregator" | "both";
+
+/** Which source(s) to use when fetching the SNS project list */
+export type SourceMode = "canister" | "aggregator" | "both";
+
 export interface SnsProject {
   name: string;
   description?: string;
@@ -8,6 +14,8 @@ export interface SnsProject {
   rootCanisterId: string;
   tokenSymbol: string;
   tokenDecimals: number;
+  /** Where this project's root canister was discovered */
+  source: SnsSource;
 }
 
 export type NeuronState = "locked" | "dissolving" | "dissolved";

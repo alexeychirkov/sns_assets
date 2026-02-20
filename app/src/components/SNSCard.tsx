@@ -1,5 +1,11 @@
-import type { SnsProjectResult } from "../lib/types";
+import type { SnsProjectResult, SnsSource } from "../lib/types";
 import { formatTokenAmount, formatDuration, shortenId } from "../lib/format";
+
+const SOURCE_BADGE: Record<SnsSource, { label: string; cls: string }> = {
+  canister:   { label: "Канистра",      cls: "badge-canister" },
+  aggregator: { label: "Агрегатор",     cls: "badge-aggregator" },
+  both:       { label: "Оба источника", cls: "badge-both" },
+};
 
 interface Props {
   result: SnsProjectResult;
@@ -40,7 +46,12 @@ export function SNSCard({ result }: Props) {
           </div>
         )}
         <div className="sns-card-title">
-          <h3 className="sns-name">{project.name}</h3>
+          <div className="sns-name-row">
+            <h3 className="sns-name">{project.name}</h3>
+            <span className={`source-badge ${SOURCE_BADGE[project.source].cls}`}>
+              {SOURCE_BADGE[project.source].label}
+            </span>
+          </div>
           {project.url && (
             <a
               className="sns-url"

@@ -57,6 +57,7 @@ export async function fetchAllSnsProjects(): Promise<SnsProject[]> {
         rootCanisterId: ids.root_canister_id,
         tokenSymbol,
         tokenDecimals,
+        source: "aggregator",
       });
     }
 
