@@ -2,6 +2,7 @@ import type { HttpAgent } from "@dfinity/agent";
 import { Actor } from "@dfinity/agent";
 import { IcrcLedgerCanister } from "@dfinity/ledger-icrc";
 import { Principal } from "@dfinity/principal";
+import { SnsGovernanceCanister } from "@dfinity/sns";
 import type { FetchOptions, SnsProject } from "./types.js";
 
 /** SNS-WASM canister on the NNS subnet */
@@ -56,7 +57,6 @@ async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promi
       agent,
     });
     const entries = await canister.metadata({ certified: false });
-    console.log(`Fetched metadata for ${ledgerCanisterId}:`, entries);
     let name = ledgerCanisterId;
     let symbol = "?";
     let decimals = 8;
@@ -69,6 +69,22 @@ async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promi
     return { name, symbol, decimals };
   } catch {
     return { name: ledgerCanisterId, symbol: "?", decimals: 8 };
+  }
+}
+
+async function fetchGovernanceLogo(
+  governanceCanisterId: string,
+  agent: HttpAgent
+): Promise<string | undefined> {
+  try {
+    const canister = SnsGovernanceCanister.create({
+      canisterId: Principal.fromText(governanceCanisterId),
+      agent,
+    });
+    const meta = await canister.metadata({ certified: false });
+    return meta.logo[0] ?? undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -100,15 +116,20 @@ export async function fetchFromCanister(
       const rootId = d.root_canister_id[0]!.toText();
       const ledgerId = d.ledger_canister_id[0]!.toText();
 
-      const meta = await fetchIcrc1Meta(ledgerId, agent);
+      const govId = d.governance_canister_id[0]!.toText();
+      const [meta, logoDataUrl] = await Promise.all([
+        fetchIcrc1Meta(ledgerId, agent),
+        fetchGovernanceLogo(govId, agent),
+      ]);
 
       projects.push({
         name: meta.name,
-        governanceCanisterId: d.governance_canister_id[0]!.toText(),
+        governanceCanisterId: govId,
         ledgerCanisterId: ledgerId,
         rootCanisterId: rootId,
         tokenSymbol: meta.symbol,
         tokenDecimals: meta.decimals,
+        logoDataUrl,
       });
 
       options.onProgress?.({ phase: "fetching", fetched: projects.length });

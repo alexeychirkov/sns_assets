@@ -18,6 +18,8 @@ export interface SnsProject {
   rootCanisterId: string;
   tokenSymbol: string;
   tokenDecimals: number;
+  /** Data URI for the project logo fetched from governance get_metadata */
+  logoDataUrl?: string;
 }
 
 // ─── Neurons ───────────────────────────────────────────────────────────────

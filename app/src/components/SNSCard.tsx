@@ -31,6 +31,7 @@ function sortByValue(list: NeuronWithValue[]): NeuronWithValue[] {
 export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
   const { project, neurons, tokenBalance, cumulative, totalValue } = result;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [cardOpen, setCardOpen] = useState(true);
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -67,8 +68,14 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
 
   return (
     <div className="sns-card">
-      <div className="sns-card-header">
-        <div className="sns-logo-placeholder">{project.name.charAt(0).toUpperCase()}</div>
+      <button className="sns-card-header" onClick={() => setCardOpen((o) => !o)}>
+        <div className="sns-logo-placeholder">
+          {project.logoDataUrl ? (
+            <img src={project.logoDataUrl} alt={project.name} className="sns-logo-img" />
+          ) : (
+            project.name.charAt(0).toUpperCase()
+          )}
+        </div>
         <div className="sns-card-title">
           <h3 className="sns-name">{project.name}</h3>
           {totalValue > 0n && (
@@ -78,9 +85,10 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
             </div>
           )}
         </div>
-      </div>
+        <span className={`sns-card-chevron${cardOpen ? " sns-card-chevron--open" : ""}`}>›</span>
+      </button>
 
-      {hasBalance && (
+      {cardOpen && hasBalance && (
         <div className="asset-section">
           <div className="section-label">Tokens</div>
           <div className="balance-row">
@@ -92,7 +100,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
         </div>
       )}
 
-      {hasCumulativeData && (
+      {cardOpen && hasCumulativeData && (
         <div className="asset-section">
           <div className="section-label">Neuron summary</div>
           <table className="cumulative-table">
@@ -154,7 +162,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
         </div>
       )}
 
-      {hasNeurons && (
+      {cardOpen && hasNeurons && (
         <div className="asset-section">
           <div className="section-label">
             Neurons
