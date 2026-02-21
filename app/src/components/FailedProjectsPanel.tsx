@@ -21,7 +21,9 @@ export function FailedProjectsPanel({ failed }: Props) {
         <span className="failed-panel-title">
           Could not verify data for {failed.length} project{failed.length === 1 ? "" : "s"}
         </span>
-        <span className={`failed-panel-chevron${expanded ? " failed-panel-chevron--open" : ""}`}>›</span>
+        <span className={`failed-panel-chevron${expanded ? " failed-panel-chevron--open" : ""}`}>
+          ›
+        </span>
       </button>
 
       {expanded && (

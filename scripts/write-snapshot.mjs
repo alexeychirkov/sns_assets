@@ -9,7 +9,9 @@ lines.push(` * Static snapshot of all deployed SNS projects.`);
 lines.push(` * Generated: ${new Date(data.fetchedAt).toISOString()}`);
 lines.push(` * Total: ${data.projects.length} projects`);
 lines.push(` */`);
-lines.push(`export const SNS_SNAPSHOT_FETCHED_AT = ${data.fetchedAt}; // ${new Date(data.fetchedAt).toISOString()}`);
+lines.push(
+  `export const SNS_SNAPSHOT_FETCHED_AT = ${data.fetchedAt}; // ${new Date(data.fetchedAt).toISOString()}`
+);
 lines.push(``);
 lines.push(`export const SNS_SNAPSHOT: SnsProject[] = [`);
 
@@ -35,4 +37,6 @@ lines.push(`}`);
 lines.push(``);
 
 fs.writeFileSync("src/snapshot.ts", lines.join("\n"));
-console.log(`Written src/snapshot.ts — ${fs.statSync("src/snapshot.ts").size} bytes, ${data.projects.length} projects`);
+console.log(
+  `Written src/snapshot.ts — ${fs.statSync("src/snapshot.ts").size} bytes, ${data.projects.length} projects`
+);

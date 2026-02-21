@@ -13,7 +13,16 @@ interface Props {
   disabled: boolean;
 }
 
-export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTotal, onLoad, onReset, disabled }: Props) {
+export function CachePanel({
+  cache,
+  loadPhase,
+  loadError,
+  fetchFetched,
+  fetchTotal,
+  onLoad,
+  onReset,
+  disabled,
+}: Props) {
   const isLoading = loadPhase === "loading";
   const fetchPct = fetchTotal > 0 ? Math.round((fetchFetched / fetchTotal) * 100) : 0;
   const stale = isCacheStale(cache);
@@ -25,14 +34,14 @@ export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTot
         <span className="cache-panel-title">SNS Projects</span>
 
         <div className="cache-meta">
-            <span className={`cache-count${stale ? " cache-stale" : ""}`}>
-              {cache.projects.length} projects
-            </span>
-            <span className="cache-dot">·</span>
-            <span className={`cache-age${stale ? " cache-stale" : ""}`}>
-              {stale ? <>⚠ stale ({formatAge(age)})</> : formatAge(age)}
-            </span>
-          </div>
+          <span className={`cache-count${stale ? " cache-stale" : ""}`}>
+            {cache.projects.length} projects
+          </span>
+          <span className="cache-dot">·</span>
+          <span className={`cache-age${stale ? " cache-stale" : ""}`}>
+            {stale ? <>⚠ stale ({formatAge(age)})</> : formatAge(age)}
+          </span>
+        </div>
       </div>
 
       <div className="cache-controls">
@@ -83,7 +92,8 @@ export function CachePanel({ cache, loadPhase, loadError, fetchFetched, fetchTot
 
       {!stale && loadPhase === "idle" && (
         <p className="cache-hint">
-          Project list is loaded from a built-in snapshot. Press <strong>Fetch latest</strong> to pull the current list from the IC network.
+          Project list is loaded from a built-in snapshot. Press <strong>Fetch latest</strong> to
+          pull the current list from the IC network.
         </p>
       )}
 

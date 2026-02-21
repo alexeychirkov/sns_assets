@@ -144,7 +144,7 @@ export function App() {
       }
     }
     init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
   const isScanning = scanPhase === "scanning";
@@ -189,9 +189,7 @@ export function App() {
 
         {scanError && <div className="global-error">{scanError}</div>}
 
-        {failedProjects.length > 0 && (
-          <FailedProjectsPanel failed={failedProjects} />
-        )}
+        {failedProjects.length > 0 && <FailedProjectsPanel failed={failedProjects} />}
 
         {showFilterBar && (
           <div className="filter-bar">

@@ -57,9 +57,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
   }
 
   const mineNeurons = prepareNeurons(neurons.filter((n) => n.isSoleOwner));
-  const sharedNeurons = showNonOwned
-    ? prepareNeurons(neurons.filter((n) => !n.isSoleOwner))
-    : [];
+  const sharedNeurons = showNonOwned ? prepareNeurons(neurons.filter((n) => !n.isSoleOwner)) : [];
 
   const hasBalance = tokenBalance > 0n;
   const hasNeurons = mineNeurons.length > 0 || sharedNeurons.length > 0;
@@ -80,12 +78,12 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
         </div>
         <div className="sns-card-title">
           <h3 className="sns-name">{project.name}</h3>
-          {(
+          {
             <div className="card-total-value">
               {formatTokenAmount(totalValue, decimals)}{" "}
               <span className="card-total-symbol">{symbol}</span>
             </div>
-          )}
+          }
         </div>
         <span className={`sns-card-chevron${cardOpen ? " sns-card-chevron--open" : ""}`}>›</span>
       </button>
@@ -94,9 +92,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
         <div className="asset-section">
           <div className="section-label">Tokens</div>
           <div className="balance-row">
-            <span className="balance-amount">
-              {formatTokenAmount(tokenBalance, decimals)}
-            </span>
+            <span className="balance-amount">{formatTokenAmount(tokenBalance, decimals)}</span>
             <span className="balance-symbol">{symbol}</span>
           </div>
         </div>
@@ -118,12 +114,10 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                 <tr>
                   <td className="cum-label">Stake</td>
                   <td>
-                    {formatTokenAmount(cumulative.total.stakeE8s, decimals)}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.total.stakeE8s, decimals)} {symbol}
                   </td>
                   <td>
-                    {formatTokenAmount(cumulative.owner.stakeE8s, decimals)}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.owner.stakeE8s, decimals)} {symbol}
                   </td>
                 </tr>
               )}
@@ -131,12 +125,10 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                 <tr>
                   <td className="cum-label">Maturity</td>
                   <td>
-                    {formatTokenAmount(cumulative.total.totalMaturityE8s, decimals)}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.total.totalMaturityE8s, decimals)} {symbol}
                   </td>
                   <td>
-                    {formatTokenAmount(cumulative.owner.totalMaturityE8s, decimals)}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.owner.totalMaturityE8s, decimals)} {symbol}
                   </td>
                 </tr>
               )}
@@ -144,18 +136,10 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                 <tr>
                   <td className="cum-label">Stk.Mat.</td>
                   <td>
-                    {formatTokenAmount(
-                      cumulative.total.stakedMaturityE8s,
-                      decimals
-                    )}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.total.stakedMaturityE8s, decimals)} {symbol}
                   </td>
                   <td>
-                    {formatTokenAmount(
-                      cumulative.owner.stakedMaturityE8s,
-                      decimals
-                    )}{" "}
-                    {symbol}
+                    {formatTokenAmount(cumulative.owner.stakedMaturityE8s, decimals)} {symbol}
                   </td>
                 </tr>
               )}
@@ -242,9 +226,7 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
         </span>
         {n.dissolveDelaySeconds > 0n && (
           <span className="neuron-detail">
-            <span className="detail-label">
-              {n.state === "dissolving" ? "Remaining" : "Delay"}
-            </span>
+            <span className="detail-label">{n.state === "dissolving" ? "Remaining" : "Delay"}</span>
             {formatDays(n.dissolveDelaySeconds)}
           </span>
         )}

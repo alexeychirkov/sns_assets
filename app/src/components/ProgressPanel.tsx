@@ -22,7 +22,9 @@ export function ProgressPanel({ phase, total, scanned, current, foundCount }: Pr
               {phase === "done" ? (
                 <>
                   Done —{" "}
-                  <span className="accent">found in {foundCount} project{foundCount === 1 ? "" : "s"}</span>
+                  <span className="accent">
+                    found in {foundCount} project{foundCount === 1 ? "" : "s"}
+                  </span>
                 </>
               ) : (
                 <>

@@ -24,9 +24,7 @@ export default defineConfig({
     // even when imported transitively from the library (sns-assets).
     dedupe: DFINITY_PKGS,
     alias: {
-      "buffer/": path.resolve(
-        "node_modules/vite-plugin-node-polyfills/shims/buffer/"
-      ),
+      "buffer/": path.resolve("node_modules/vite-plugin-node-polyfills/shims/buffer/"),
       "vite-plugin-node-polyfills/shims/global": path.resolve(
         "node_modules/vite-plugin-node-polyfills/shims/global"
       ),

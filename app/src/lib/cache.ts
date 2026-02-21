@@ -15,10 +15,7 @@ export interface ProjectCache {
  * Create an initial in-memory cache from the bundled snapshot.
  * No persistence — data lives only for the duration of the session.
  */
-export function initFromSnapshot(
-  snapshot: SnsProject[],
-  snapshotFetchedAt: number
-): ProjectCache {
+export function initFromSnapshot(snapshot: SnsProject[], snapshotFetchedAt: number): ProjectCache {
   return {
     projects: [...snapshot],
     fetchedAt: snapshotFetchedAt,
