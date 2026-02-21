@@ -1,20 +1,42 @@
 import { Principal } from "@dfinity/principal";
-import { getAgent } from "./agent.js";
-import { fetchFromCanister } from "./canister.js";
-import { fetchNeurons } from "./governance.js";
-import { fetchTokenBalance } from "./ledger.js";
+import { getAgent } from "./agent";
+import { fetchFromCanister } from "./canister";
+import { fetchNeurons } from "./governance";
+import { fetchTokenBalance } from "./ledger";
 
-import type { FetchOptions, ScanOptions, ScanProjectError, ScanResult, SnsNeuronInfo, SnsProject, SnsProjectAssets, SnsProjectCumulative } from "./types";
+import type {
+  FetchOptions,
+  ScanOptions,
+  ScanProjectError,
+  ScanResult,
+  SnsNeuronInfo,
+  SnsProject,
+  SnsProjectAssets,
+  SnsProjectCumulative,
+} from "./types";
 
 // ─── Public type exports ───────────────────────────────────────────────────
 
 export type {
-  FetchOptions, FetchPhase, FetchProgress, NeuronCumulative, NeuronPermission, NeuronState, ScanOptions, ScanPhase, ScanProgress, ScanProjectError, ScanResult, SnsNeuronInfo, SnsProject,
-  SnsProjectAssets, SnsProjectCumulative
-} from "./types.js";
+  FetchOptions,
+  FetchPhase,
+  FetchProgress,
+  NeuronCumulative,
+  NeuronPermission,
+  NeuronState,
+  ScanOptions,
+  ScanPhase,
+  ScanProgress,
+  ScanProjectError,
+  ScanResult,
+  SnsNeuronInfo,
+  SnsProject,
+  SnsProjectAssets,
+  SnsProjectCumulative,
+} from "./types";
 
-export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot.js";
-export { getNeuronPermissionName, NeuronPermissionType } from "./types.js";
+export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot";
+export { getNeuronPermissionName, NeuronPermissionType } from "./types";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -59,9 +81,9 @@ function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
  * @param options.onProgress Called after each batch of metadata is fetched
  */
 export async function fetchSnsProjects(options: FetchOptions = {}): Promise<SnsProject[]> {
-  const { host = DEFAULT_HOST, onProgress, knownProjects } = options;
+  const { host = DEFAULT_HOST, onProgress, knownProjects, excludedProjects } = options;
   const agent = await getAgent(host);
-  return fetchFromCanister(agent, { onProgress, knownProjects });
+  return fetchFromCanister(agent, { onProgress, knownProjects, excludedProjects });
 }
 
 // ─── Phase 2: Scan a principal against a pre-fetched list ─────────────────
@@ -97,6 +119,10 @@ export async function scanPrincipal(
     includeEmpty = false,
   } = options;
 
+  console.log(
+    `SNS: Scanning principal ${principal.toText()} across ${projects.length} SNS projects with concurrency ${concurrency}...`
+  );
+
   const total = projects.length;
   let scanned = 0;
 
@@ -124,7 +150,10 @@ export async function scanPrincipal(
         neurons = neuronsResult.value;
       } else {
         governanceFailed = true;
-        errorMsg = neuronsResult.reason instanceof Error ? neuronsResult.reason.message : String(neuronsResult.reason);
+        errorMsg =
+          neuronsResult.reason instanceof Error
+            ? neuronsResult.reason.message
+            : String(neuronsResult.reason);
       }
 
       if (balanceResult.status === "fulfilled") {
@@ -132,7 +161,10 @@ export async function scanPrincipal(
       } else {
         ledgerFailed = true;
         if (!errorMsg) {
-          errorMsg = balanceResult.reason instanceof Error ? balanceResult.reason.message : String(balanceResult.reason);
+          errorMsg =
+            balanceResult.reason instanceof Error
+              ? balanceResult.reason.message
+              : String(balanceResult.reason);
         }
       }
 
@@ -143,7 +175,8 @@ export async function scanPrincipal(
       const hasAssets = neurons.length > 0 || tokenBalance > BigInt(0);
       if (includeEmpty || hasAssets) {
         const cumulative = computeCumulative(neurons);
-        const totalValue = tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
+        const totalValue =
+          tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
         assets.push({ project, neurons, tokenBalance, hasAssets, cumulative, totalValue });
       }
 
@@ -154,6 +187,8 @@ export async function scanPrincipal(
 
   await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, worker));
   onProgress?.({ phase: "done", total, scanned });
+
+  console.log(`SNS: Scan complete: ${assets.length} assets found, ${failed.length} failures.`);
 
   return { assets, failed };
 }

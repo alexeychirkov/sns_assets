@@ -49,7 +49,10 @@ const idlFactory = ({ IDL }: { IDL: any }) => {
 };
 
 /** Returns null if the canister did not respond */
-async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promise<Icrc1MetaResult | null> {
+async function fetchIcrc1Meta(
+  ledgerCanisterId: string,
+  agent: HttpAgent
+): Promise<Icrc1MetaResult | null> {
   try {
     const canister = IcrcLedgerCanister.create({
       canisterId: Principal.fromText(ledgerCanisterId),
@@ -62,8 +65,7 @@ async function fetchIcrc1Meta(ledgerCanisterId: string, agent: HttpAgent): Promi
     for (const [key, val] of entries) {
       if (key === "icrc1:name" && "Text" in val) name = (val as { Text: string }).Text;
       if (key === "icrc1:symbol" && "Text" in val) symbol = (val as { Text: string }).Text;
-      if (key === "icrc1:decimals" && "Nat" in val)
-        decimals = Number((val as { Nat: bigint }).Nat);
+      if (key === "icrc1:decimals" && "Nat" in val) decimals = Number((val as { Nat: bigint }).Nat);
     }
     return { name, symbol, decimals };
   } catch {
@@ -81,6 +83,11 @@ async function fetchGovernanceLogo(
       agent,
     });
     const meta = await canister.metadata({ certified: false });
+    console.log(
+      `SNS: [fetchGovernanceLogo][${governanceCanisterId}] fetched metadata for`,
+      governanceCanisterId,
+      meta
+    );
     return meta.logo[0] ?? undefined;
   } catch {
     return undefined;
@@ -95,20 +102,28 @@ async function fetchGovernanceLogo(
  */
 export async function fetchFromCanister(
   agent: HttpAgent,
-  options: Pick<FetchOptions, "onProgress" | "knownProjects"> = {}
+  options: Pick<FetchOptions, "onProgress" | "knownProjects" | "excludedProjects"> = {}
 ): Promise<SnsProject[]> {
-  const { onProgress, knownProjects = [] } = options;
+  const { onProgress, excludedProjects = [] } = options;
+  const excludedSet = new Set(excludedProjects);
+  const knownProjects = (options.knownProjects ?? []).filter(
+    (p) => !excludedSet.has(p.rootCanisterId)
+  );
   const knownMap = new Map(knownProjects.map((p) => [p.rootCanisterId, p]));
 
   const actor = Actor.createActor<SnsWasmActor>(idlFactory, {
     canisterId: Principal.fromText(SNS_WASM_CANISTER_ID),
     agent,
   });
-  
+
   const { instances } = await actor.list_deployed_snses({});
 
   const valid = instances.filter(
-    (d) => d.root_canister_id[0] && d.governance_canister_id[0] && d.ledger_canister_id[0]
+    (d) =>
+      d.root_canister_id[0] &&
+      d.governance_canister_id[0] &&
+      d.ledger_canister_id[0] &&
+      !excludedSet.has(d.root_canister_id[0]!.toText())
   );
 
   const total = valid.length;
@@ -117,11 +132,18 @@ export async function fetchFromCanister(
 
   const newInstances = valid.filter((d) => !knownMap.has(d.root_canister_id[0]!.toText()));
 
-  console.log(`[fetchFromCanister] total on-chain: ${total}, known: ${knownMap.size}, new: ${newInstances.length}`);
+  console.log(
+    `SNS: [fetchFromCanister] total on-chain: ${total}, known: ${knownMap.size}, new: ${newInstances.length}`
+  );
   if (newInstances.length > 0) {
-    console.log(`[fetchFromCanister] fetching NEW projects:`, newInstances.map((d) => d.root_canister_id[0]!.toText()));
+    console.log(
+      `SNS: [fetchFromCanister] fetching NEW projects:`,
+      newInstances.map((d) => d.root_canister_id[0]!.toText())
+    );
   } else {
-    console.log(`[fetchFromCanister] nothing new to fetch — all on-chain projects are in knownProjects`);
+    console.log(
+      `SNS: [fetchFromCanister] nothing new to fetch — all on-chain projects are in knownProjects`
+    );
   }
 
   const newProjects: SnsProject[] = [];
@@ -161,8 +183,15 @@ export async function fetchFromCanister(
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(METADATA_CONCURRENCY, Math.max(newInstances.length, 1)) }, worker));
+  await Promise.all(
+    Array.from({ length: Math.min(METADATA_CONCURRENCY, Math.max(newInstances.length, 1)) }, worker)
+  );
   onProgress?.({ phase: "done", fetched, total });
 
-  return [...knownProjects, ...newProjects];
+  const result = [...knownProjects, ...newProjects];
+  console.log(
+    `SNS: [fetchFromCanister] done fetching metadata for new projects. Total projects: ${knownProjects.length + newProjects.length}`,
+    result
+  );
+  return result;
 }

@@ -50,18 +50,30 @@ export enum NeuronPermissionType {
 
 export const getNeuronPermissionName = (value: number): string => {
   switch (value) {
-    case NeuronPermissionType.Unspecified: return "Unspecified";
-    case NeuronPermissionType.ConfigureDissolveState: return "ConfigureDissolveState";
-    case NeuronPermissionType.ManagePrincipals: return "ManagePrincipals";
-    case NeuronPermissionType.SubmitProposal: return "SubmitProposal";
-    case NeuronPermissionType.Vote: return "Vote";
-    case NeuronPermissionType.Disburse: return "Disburse";
-    case NeuronPermissionType.Split: return "Split";
-    case NeuronPermissionType.MergeMaturity: return "MergeMaturity";
-    case NeuronPermissionType.DisburseMaturity: return "DisburseMaturity";
-    case NeuronPermissionType.StakeMaturity: return "StakeMaturity";
-    case NeuronPermissionType.ManageVotingPermission: return "ManageVotingPermission";
-    default: return "Unknown Permission";
+    case NeuronPermissionType.Unspecified:
+      return "Unspecified";
+    case NeuronPermissionType.ConfigureDissolveState:
+      return "ConfigureDissolveState";
+    case NeuronPermissionType.ManagePrincipals:
+      return "ManagePrincipals";
+    case NeuronPermissionType.SubmitProposal:
+      return "SubmitProposal";
+    case NeuronPermissionType.Vote:
+      return "Vote";
+    case NeuronPermissionType.Disburse:
+      return "Disburse";
+    case NeuronPermissionType.Split:
+      return "Split";
+    case NeuronPermissionType.MergeMaturity:
+      return "MergeMaturity";
+    case NeuronPermissionType.DisburseMaturity:
+      return "DisburseMaturity";
+    case NeuronPermissionType.StakeMaturity:
+      return "StakeMaturity";
+    case NeuronPermissionType.ManageVotingPermission:
+      return "ManageVotingPermission";
+    default:
+      return "Unknown Permission";
   }
 };
 
@@ -185,6 +197,7 @@ export interface FetchOptions {
    * NOT present in this list, drastically reducing network calls.
    */
   knownProjects?: SnsProject[];
+  excludedProjects?: string[]; // List of rootCanisterIds to exclude
 }
 
 export interface ScanOptions {

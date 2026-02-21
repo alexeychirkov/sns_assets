@@ -78,15 +78,15 @@ export async function fetchNeurons(
       (acc, d) => acc + d.amount_e8s,
       BigInt(0)
     );
-    const totalMaturityE8s = n.maturity_e8s_equivalent + stakedMaturityE8s + totalDisbursingMaturity;
+    const totalMaturityE8s =
+      n.maturity_e8s_equivalent + stakedMaturityE8s + totalDisbursingMaturity;
 
     const managePrincipals = permissions
       .filter((p) => p.permission_type.includes(NeuronPermissionType.ManagePrincipals))
       .map((p) => p.principal)
       .filter((p): p is string => p !== null);
 
-    const isSoleOwner =
-      managePrincipals.length === 1 && managePrincipals[0] === principal.toText();
+    const isSoleOwner = managePrincipals.length === 1 && managePrincipals[0] === principal.toText();
 
     return {
       id: rawId ? neuronIdToHex(rawId.id) : "unknown",
