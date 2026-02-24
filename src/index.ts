@@ -39,6 +39,7 @@ export type {
   TokenPrices,
 } from "./types";
 
+export { EXCLUDED_PROJECTS } from "./constants";
 export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot";
 export { getNeuronPermissionName, NeuronPermissionType } from "./types";
 
