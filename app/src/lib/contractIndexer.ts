@@ -13,7 +13,7 @@ const PAGE_SIZE = 100n;
  * Creates an anonymous read-only actor for the contract_indexer canister.
  */
 function createIndexerActor(): _SERVICE {
-  const agent = new HttpAgent({ host: "https://ic0.app" });
+  const agent = new HttpAgent({ host: "https://icp0.io" });
   return Actor.createActor<_SERVICE>(idlFactory, {
     agent,
     canisterId: CONTRACT_INDEXER_CANISTER_ID,

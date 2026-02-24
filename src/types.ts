@@ -255,7 +255,7 @@ export interface ScanProgress {
 // ─── Options ───────────────────────────────────────────────────────────────
 
 export interface FetchOptions {
-  /** IC HTTP gateway host. Default: "https://ic0.app" */
+  /** IC HTTP gateway host. Default: "https://icp0.io" */
   host?: string;
   /** Called as pages are fetched (useful for large lists) */
   onProgress?: (progress: FetchProgress) => void;
@@ -269,7 +269,7 @@ export interface FetchOptions {
 }
 
 export interface ScanOptions {
-  /** IC HTTP gateway host. Default: "https://ic0.app" */
+  /** IC HTTP gateway host. Default: "https://icp0.io" */
   host?: string;
   /** Max parallel canister queries. Default: 5 */
   concurrency?: number;

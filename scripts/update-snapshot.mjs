@@ -23,7 +23,7 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const SNAPSHOT_SRC = path.join(ROOT, "src/snapshot.ts");
 const SNAPSHOTS_DIR = path.join(ROOT, "snapshots");
 const SNAPSHOT_RAW = path.join(ROOT, "scripts/snapshot-raw.json");
-const HOST = "https://ic0.app";
+const HOST = "https://icp0.io";
 
 // ─── Step 1: Backup current snapshot ────────────────────────────────────────
 

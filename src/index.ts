@@ -91,7 +91,7 @@ function computeCumulative(neurons: SnsNeuronInfo[]): {
  * const projects = JSON.parse(localStorage.getItem("sns")!) as SnsProject[];
  * ```
  *
- * @param options.host       IC gateway host. Default: `"https://ic0.app"`
+ * @param options.host       IC gateway host. Default: `"https://icp0.io"`
  * @param options.onProgress Called after each batch of metadata is fetched
  */
 export async function fetchSnsProjects(options: FetchOptions = {}): Promise<SnsProject[]> {
