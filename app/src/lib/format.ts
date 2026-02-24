@@ -40,6 +40,23 @@ export function shortenId(hex: string): string {
   return `${hex.slice(0, 6)}…${hex.slice(-6)}`;
 }
 
+/**
+ * Format USD e6s (1 USD = 1_000_000n) as "$12.34".
+ * Negative values are rendered as "-$12.34".
+ */
+export function formatUsdE6s(e6s: bigint): string {
+  const neg = e6s < 0n;
+  const abs = neg ? -e6s : e6s;
+  const whole = abs / 1_000_000n;
+  const frac = ((abs % 1_000_000n) / 10_000n).toString().padStart(2, "0");
+  return `${neg ? "-" : ""}$${whole}.${frac}`;
+}
+
+/** Format ICP e8s (bigint) as "1.23 ICP" */
+export function formatIcpE8s(e8s: bigint): string {
+  return formatTokenAmount(e8s, 8) + " ICP";
+}
+
 /** Format elapsed milliseconds into a human-readable age string */
 export function formatAge(ms: number): string {
   const s = ms / 1000;

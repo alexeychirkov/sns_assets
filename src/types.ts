@@ -83,20 +83,22 @@ export interface NeuronPermission {
   permission_type: NeuronPermissionType[];
 }
 
-export interface MaturityInfo {
-  /** Available maturity in smallest token units */
+// ─── Neuron balances ───────────────────────────────────────────────────────
+
+/** All token amounts for a single neuron, in smallest token units */
+export interface NeuronBalance {
+  stakeE8s: bigint;
   maturityE8s: bigint;
-  /** Staked maturity in smallest token units */
   stakedMaturityE8s: bigint;
   /** Total maturity = available + staked + disbursing */
   totalMaturityE8s: bigint;
+  /** stakeE8s + totalMaturityE8s — pre-computed for sorting/display */
+  totalValue: bigint;
 }
 
-export interface SnsNeuronInfo extends MaturityInfo {
+export interface SnsNeuronInfo {
   /** Hex-encoded neuron ID */
   id: string;
-  /** Staked amount in smallest token units (cached_neuron_stake_e8s) */
-  stakeE8s: bigint;
   state: NeuronState;
   /** Remaining dissolve delay in seconds */
   dissolveDelaySeconds: bigint;
@@ -107,19 +109,90 @@ export interface SnsNeuronInfo extends MaturityInfo {
   permissions: NeuronPermission[];
   /** true if the scanned principal is the sole holder of ManagePrincipals */
   isSoleOwner: boolean;
+  /** All token amounts for this neuron */
+  balance: NeuronBalance;
+  /** USD / ICP value — present after applyValuation() */
+  valuation?: NeuronValuation;
 }
 
-// ─── Cumulative ────────────────────────────────────────────────────────────
+// ─── Cumulative (aggregate over multiple neurons) ──────────────────────────
 
-export interface NeuronCumulative extends MaturityInfo {
+/** Sum of token amounts across a set of neurons */
+export interface NeuronCumulative {
   stakeE8s: bigint;
+  maturityE8s: bigint;
+  stakedMaturityE8s: bigint;
+  totalMaturityE8s: bigint;
 }
 
-export interface SnsProjectCumulative {
-  /** Summed across all neurons returned for the principal */
-  total: NeuronCumulative;
-  /** Summed only for neurons where isSoleOwner === true */
-  owner: NeuronCumulative;
+// ─── Project-level balances ─────────────────────────────────────────────────
+
+/** All token amounts for one SNS project (free balance + neuron aggregates) */
+export interface ProjectBalance {
+  /** Free token balance in smallest token units */
+  tokenBalance: bigint;
+  /** Cumulative balances summed across ALL neurons */
+  neuronsTotal: NeuronCumulative;
+  /** Cumulative balances summed across isSoleOwner neurons only */
+  neuronsOwner: NeuronCumulative;
+  /**
+   * Pre-computed owned total = tokenBalance + neuronsOwner.stakeE8s + neuronsOwner.totalMaturityE8s.
+   * Useful for sorting and display.
+   */
+  totalValue: bigint;
+}
+
+// ─── Valuation ─────────────────────────────────────────────────────────────
+
+/**
+ * Prices for one token as returned by the price feed.
+ * All fields are plain **number** (float).
+ */
+export interface TokenPrices {
+  /** Price of 1 ICP in USD */
+  icpPriceUsd: number;
+  /** Price of one whole governance token in USD */
+  tokenPriceUsd: number;
+  /** Price of one whole governance token in ICP */
+  tokenPriceIcp: number;
+}
+
+/**
+ * USD / ICP value of a single neuron.
+ * USD in **e6s** (1 USD = 1_000_000n), ICP in **e8s** (1 ICP = 100_000_000n).
+ */
+export interface NeuronValuation {
+  valueUsd: bigint;
+  valueIcp: bigint;
+}
+
+/**
+ * Aggregated valuation for one SNS project.
+ * USD in **e6s** (1 USD = 1_000_000n), ICP in **e8s** (1 ICP = 100_000_000n).
+ */
+export interface ProjectValuation {
+  /** Prices used to compute all bigint fields below */
+  prices: TokenPrices;
+  /** Free token balance in USD e6s */
+  tokenBalanceUsd: bigint;
+  /** Free token balance in ICP e8s */
+  tokenBalanceIcp: bigint;
+  /** All neurons combined (stake + total maturity) in USD e6s */
+  neuronsValueUsd: bigint;
+  /** All neurons combined in ICP e8s */
+  neuronsValueIcp: bigint;
+  /** isSoleOwner neurons only in USD e6s */
+  ownerNeuronsValueUsd: bigint;
+  /** isSoleOwner neurons only in ICP e8s */
+  ownerNeuronsValueIcp: bigint;
+  /** tokenBalance + all neurons in USD e6s */
+  totalValueUsd: bigint;
+  /** tokenBalance + all neurons in ICP e8s */
+  totalValueIcp: bigint;
+  /** tokenBalance + isSoleOwner neurons in USD e6s */
+  ownerValueUsd: bigint;
+  /** tokenBalance + isSoleOwner neurons in ICP e8s */
+  ownerValueIcp: bigint;
 }
 
 // ─── Results ───────────────────────────────────────────────────────────────
@@ -128,16 +201,11 @@ export interface SnsProjectAssets {
   project: SnsProject;
   /** Neurons owned by (or hotkeyed to) the queried principal */
   neurons: SnsNeuronInfo[];
-  /** Token balance in smallest units (bigint) */
-  tokenBalance: bigint;
   hasAssets: boolean;
-  /** Cumulative stake + maturity totals */
-  cumulative: SnsProjectCumulative;
-  /**
-   * Total owned value = tokenBalance + owner stake + owner total maturity.
-   * All amounts are in smallest token units.
-   */
-  totalValue: bigint;
+  /** All token balances (free + aggregated neurons) for this project */
+  balance: ProjectBalance;
+  /** USD / ICP valuation — present after applyValuation() */
+  valuation?: ProjectValuation;
 }
 
 /** Result of scanning a principal across all SNS projects */

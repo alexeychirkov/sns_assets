@@ -1,0 +1,25 @@
+[package]
+name = "sns_assets"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid.workspace = true
+serde.workspace = true
+ic-cdk.workspace = true
+ic-cdk-macros.workspace = true
+ic-http-certification.workspace = true
+ic-certification.workspace = true
+ic-asset-certification.workspace = true
+include_dir.workspace = true
+globset.workspace = true
+lazy_static.workspace = true
+flate2.workspace = true
+brotli.workspace = true
+common_canister_api = { git = "https://github.com/geekfactory-core/common.git", tag = "0.0.1" }
+common_canister_impl = { git = "https://github.com/geekfactory-core/common.git", tag = "0.0.1" }

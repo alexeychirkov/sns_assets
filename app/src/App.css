@@ -817,3 +817,67 @@ body {
   font-size: var(--fs-xs);
   color: var(--text-muted);
 }
+
+/* ─── Valuation ─────────────────────────────────────────────────────────── */
+
+/* Portfolio total bar above the results grid */
+.portfolio-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 0 2px;
+  border-top: 1px solid var(--border-light);
+}
+.portfolio-label {
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.portfolio-usd {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text);
+}
+.portfolio-sep {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.portfolio-icp {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Card header valuation (below token total) */
+.card-valuation {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: 1px;
+}
+.card-val-usd {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text);
+}
+.card-val-sep {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+.card-val-icp {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* Inline secondary price tag (used in balance row and neuron row) */
+.price-secondary {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.price-sep {
+  color: var(--border-light);
+}

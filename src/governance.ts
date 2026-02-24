@@ -2,7 +2,7 @@ import type { HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import type { SnsNeuron } from "@dfinity/sns";
 import { SnsGovernanceCanister } from "@dfinity/sns";
-import type { NeuronPermission, NeuronState, SnsNeuronInfo } from "./types";
+import type { NeuronBalance, NeuronPermission, NeuronState, SnsNeuronInfo } from "./types";
 import { NeuronPermissionType } from "./types";
 
 function neuronIdToHex(id: Uint8Array | number[]): string {
@@ -88,18 +88,23 @@ export async function fetchNeurons(
 
     const isSoleOwner = managePrincipals.length === 1 && managePrincipals[0] === principal.toText();
 
-    return {
-      id: rawId ? neuronIdToHex(rawId.id) : "unknown",
+    const balance: NeuronBalance = {
       stakeE8s: n.cached_neuron_stake_e8s,
       maturityE8s: n.maturity_e8s_equivalent,
       stakedMaturityE8s,
       totalMaturityE8s,
+      totalValue: n.cached_neuron_stake_e8s + totalMaturityE8s,
+    };
+
+    return {
+      id: rawId ? neuronIdToHex(rawId.id) : "unknown",
       state,
       dissolveDelaySeconds,
       dissolveAt,
       votingPowerPercentageMultiplier: n.voting_power_percentage_multiplier,
       permissions,
       isSoleOwner,
+      balance,
     };
   });
 }

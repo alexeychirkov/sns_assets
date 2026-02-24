@@ -6,13 +6,13 @@ import { fetchTokenBalance } from "./ledger";
 
 import type {
   FetchOptions,
+  NeuronCumulative,
   ScanOptions,
   ScanProjectError,
   ScanResult,
   SnsNeuronInfo,
   SnsProject,
   SnsProjectAssets,
-  SnsProjectCumulative,
 } from "./types";
 
 // ─── Public type exports ───────────────────────────────────────────────────
@@ -21,9 +21,13 @@ export type {
   FetchOptions,
   FetchPhase,
   FetchProgress,
+  NeuronBalance,
   NeuronCumulative,
   NeuronPermission,
   NeuronState,
+  NeuronValuation,
+  ProjectBalance,
+  ProjectValuation,
   ScanOptions,
   ScanPhase,
   ScanProgress,
@@ -32,29 +36,38 @@ export type {
   SnsNeuronInfo,
   SnsProject,
   SnsProjectAssets,
-  SnsProjectCumulative,
+  TokenPrices,
 } from "./types";
 
 export { getSnapshotProjects, SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT } from "./snapshot";
 export { getNeuronPermissionName, NeuronPermissionType } from "./types";
 
+// ─── Pricing & Valuation ───────────────────────────────────────────────────
+
+export { fetchPriceMap, ICP_LEDGER_ID } from "./prices";
+export type { IcpSwapTokenInfo, PriceMap } from "./prices";
+export { applyValuation } from "./valuation";
+
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-const DEFAULT_HOST = "https://ic0.app";
+const DEFAULT_HOST = "https://icp0.io";
 const DEFAULT_CONCURRENCY = 5;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function computeCumulative(neurons: SnsNeuronInfo[]): SnsProjectCumulative {
-  const sum = (arr: SnsNeuronInfo[]) => ({
-    stakeE8s: arr.reduce((a, n) => a + n.stakeE8s, BigInt(0)),
-    maturityE8s: arr.reduce((a, n) => a + n.maturityE8s, BigInt(0)),
-    stakedMaturityE8s: arr.reduce((a, n) => a + n.stakedMaturityE8s, BigInt(0)),
-    totalMaturityE8s: arr.reduce((a, n) => a + n.totalMaturityE8s, BigInt(0)),
+function computeCumulative(neurons: SnsNeuronInfo[]): {
+  neuronsTotal: NeuronCumulative;
+  neuronsOwner: NeuronCumulative;
+} {
+  const sum = (arr: SnsNeuronInfo[]): NeuronCumulative => ({
+    stakeE8s: arr.reduce((a, n) => a + n.balance.stakeE8s, 0n),
+    maturityE8s: arr.reduce((a, n) => a + n.balance.maturityE8s, 0n),
+    stakedMaturityE8s: arr.reduce((a, n) => a + n.balance.stakedMaturityE8s, 0n),
+    totalMaturityE8s: arr.reduce((a, n) => a + n.balance.totalMaturityE8s, 0n),
   });
   return {
-    total: sum(neurons),
-    owner: sum(neurons.filter((n) => n.isSoleOwner)),
+    neuronsTotal: sum(neurons),
+    neuronsOwner: sum(neurons.filter((n) => n.isSoleOwner)),
   };
 }
 
@@ -174,10 +187,14 @@ export async function scanPrincipal(
 
       const hasAssets = neurons.length > 0 || tokenBalance > BigInt(0);
       if (includeEmpty || hasAssets) {
-        const cumulative = computeCumulative(neurons);
-        const totalValue =
-          tokenBalance + cumulative.owner.stakeE8s + cumulative.owner.totalMaturityE8s;
-        assets.push({ project, neurons, tokenBalance, hasAssets, cumulative, totalValue });
+        const { neuronsTotal, neuronsOwner } = computeCumulative(neurons);
+        const totalValue = tokenBalance + neuronsOwner.stakeE8s + neuronsOwner.totalMaturityE8s;
+        assets.push({
+          project,
+          neurons,
+          hasAssets,
+          balance: { tokenBalance, neuronsTotal, neuronsOwner, totalValue },
+        });
       }
 
       scanned++;

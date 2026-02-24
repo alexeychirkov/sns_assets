@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
 import type { ScanProjectError, SnsProjectAssets } from "sns-assets";
-import { SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT, fetchSnsProjects, scanPrincipal } from "sns-assets";
+import { SNS_SNAPSHOT, SNS_SNAPSHOT_FETCHED_AT, applyValuation, fetchPriceMap, fetchSnsProjects, scanPrincipal } from "sns-assets";
 
 import { CachePanel } from "./components/CachePanel";
 import { FailedProjectsPanel } from "./components/FailedProjectsPanel";
@@ -12,6 +12,7 @@ import { ProgressPanel } from "./components/ProgressPanel";
 import { SNSCard } from "./components/SNSCard";
 import type { ProjectCache } from "./lib/cache";
 import { appendProject, initFromSnapshot, markFetchComplete } from "./lib/cache";
+import { formatIcpE8s, formatUsdE6s } from "./lib/format";
 
 type ScanPhase = "idle" | "scanning" | "done" | "error";
 
@@ -129,16 +130,23 @@ export function App() {
       setCurrent("");
 
       try {
-        const { assets, failed } = await scanPrincipal(principal, launched, {
-          concurrency: CONCURRENCY,
-          onProgress(p) {
-            if (p.phase === "scanning") {
-              setScanned((prev) => Math.max(prev, p.scanned));
-              setCurrent(p.current ?? "");
-            }
-          },
-        });
-        setResults(assets);
+        const [{ assets, failed }, priceMap] = await Promise.all([
+          scanPrincipal(principal, launched, {
+            concurrency: CONCURRENCY,
+            onProgress(p) {
+              if (p.phase === "scanning") {
+                setScanned((prev) => Math.max(prev, p.scanned));
+                setCurrent(p.current ?? "");
+              }
+            },
+          }),
+          fetchPriceMap().catch(() => null),
+        ]);
+        console.log(`SNS: Scan complete: ${assets.length} assets found, ${failed.length} failures.`, {priceMap});
+        const enriched = priceMap
+          ? assets.map((a) => applyValuation(a, priceMap))
+          : assets;
+        setResults(enriched);
         setFailedProjects(failed);
         setCurrent("");
         setScanPhase("done");
@@ -170,6 +178,16 @@ export function App() {
   const isBusy = isScanning || listPhase === "loading";
   const showResults = results.length > 0;
   const showFilterBar = showResults || scanPhase === "done";
+
+  const hasValuation = results.some((r) => r.valuation !== undefined);
+  const totalPortfolioUsd = results.reduce(
+    (acc, r) => acc + (r.valuation?.ownerValueUsd ?? 0n),
+    0n
+  );
+  const totalPortfolioIcp = results.reduce(
+    (acc, r) => acc + (r.valuation?.ownerValueIcp ?? 0n),
+    0n
+  );
 
   return (
     <div className="app">
@@ -236,6 +254,14 @@ export function App() {
             <h2 className="results-heading">
               Found in {results.length} project{results.length === 1 ? "" : "s"}
             </h2>
+            {hasValuation && (
+              <div className="portfolio-summary">
+                <span className="portfolio-label">Portfolio (owned)</span>
+                <span className="portfolio-usd">{formatUsdE6s(totalPortfolioUsd)}</span>
+                <span className="portfolio-sep">·</span>
+                <span className="portfolio-icp">{formatIcpE8s(totalPortfolioIcp)}</span>
+              </div>
+            )}
             <div className="results-grid">
               {results.map((r) => (
                 <SNSCard
