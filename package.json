@@ -21,7 +21,8 @@
     "dev": "vite build --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "update-snapshot": "node scripts/update-snapshot.mjs"
   },
   "keywords": [
     "dfinity",
