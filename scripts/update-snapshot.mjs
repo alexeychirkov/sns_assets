@@ -2,7 +2,7 @@
  * Updates src/snapshot.ts with fresh data from the IC network.
  *
  * Steps:
- *   1. Back up the current src/snapshot.ts to src/snapshots/snapshot-<datetime>.ts
+ *   1. Back up the current src/snapshot.ts to snapshots/snapshot-<datetime>.ts
  *   2. Fetch all SNS projects (excluding EXCLUDED_PROJECTS)
  *   3. Save raw data to scripts/snapshot-raw.json
  *   4. Write the new src/snapshot.ts
@@ -21,7 +21,7 @@ import { EXCLUDED_PROJECTS, fetchSnsProjects } from "../dist/index.js";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const SNAPSHOT_SRC = path.join(ROOT, "src/snapshot.ts");
-const SNAPSHOTS_DIR = path.join(ROOT, "src/snapshots");
+const SNAPSHOTS_DIR = path.join(ROOT, "snapshots");
 const SNAPSHOT_RAW = path.join(ROOT, "scripts/snapshot-raw.json");
 const HOST = "https://ic0.app";
 
@@ -53,7 +53,7 @@ function backupCurrentSnapshot() {
   fs.mkdirSync(SNAPSHOTS_DIR, { recursive: true });
   const backupPath = path.join(SNAPSHOTS_DIR, `snapshot-${timestamp}.ts`);
   fs.copyFileSync(SNAPSHOT_SRC, backupPath);
-  process.stderr.write(`Backed up to src/snapshots/snapshot-${timestamp}.ts\n`);
+  process.stderr.write(`Backed up to snapshots/snapshot-${timestamp}.ts\n`);
 }
 
 // ─── Step 2: Fetch projects ──────────────────────────────────────────────────
