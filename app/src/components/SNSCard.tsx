@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { SnsNeuronInfo, SnsProjectAssets } from "sns-assets";
+import type { NervousSystemParamsInfo, SnsNeuronInfo, SnsProjectAssets } from "sns-assets";
+import { getNeuronPermissionName } from "sns-assets";
 import { formatDays, formatTokenAmount, formatUsdE6s } from "../lib/format";
 import { NeuronModal } from "./NeuronModal";
 
@@ -217,11 +218,26 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
           )}
         </div>
       )}
+
+      {cardOpen && result.nervousSystemParams && result.nervousSystemParams.grantablePermissions.length > 0 && (
+        <div className="asset-section">
+          <div className="section-label">Grantable permissions</div>
+          <div className="grantable-permissions">
+            {result.nervousSystemParams.grantablePermissions.map((pt) => (
+              <span key={pt} className="grantable-perm-tag">
+                {getNeuronPermissionName(pt)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {modalNeuron && (
         <NeuronModal
           neuron={modalNeuron}
           symbol={symbol}
           decimals={decimals}
+          nervousSystemParams={result.nervousSystemParams}
           onClose={() => setModalNeuron(null)}
         />
       )}

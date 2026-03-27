@@ -1,12 +1,13 @@
 import { Principal } from "@dfinity/principal";
 import { getAgent } from "./agent";
 import { fetchFromCanister } from "./canister";
-import { fetchNeurons } from "./governance";
+import { fetchNeurons, fetchNervousSystemParameters } from "./governance";
 import { fetchTokenBalance } from "./ledger";
 
 import type {
   FetchOptions,
   NeuronCumulative,
+  NervousSystemParamsInfo,
   ScanOptions,
   ScanProjectError,
   ScanResult,
@@ -23,6 +24,7 @@ export type {
   FetchProgress,
   NeuronBalance,
   NeuronCumulative,
+  NervousSystemParamsInfo,
   NeuronPermission,
   NeuronState,
   NeuronValuation,
@@ -151,13 +153,15 @@ export async function scanPrincipal(
 
       let neurons: SnsNeuronInfo[] = [];
       let tokenBalance = BigInt(0);
+      let nervousSystemParams: NervousSystemParamsInfo | undefined;
       let governanceFailed = false;
       let ledgerFailed = false;
       let errorMsg = "";
 
-      const [neuronsResult, balanceResult] = await Promise.allSettled([
+      const [neuronsResult, balanceResult, paramsResult] = await Promise.allSettled([
         fetchNeurons(project.governanceCanisterId, principal, agent),
         fetchTokenBalance(project.ledgerCanisterId, principal, agent),
+        fetchNervousSystemParameters(project.governanceCanisterId, agent),
       ]);
 
       if (neuronsResult.status === "fulfilled") {
@@ -182,6 +186,10 @@ export async function scanPrincipal(
         }
       }
 
+      if (paramsResult.status === "fulfilled") {
+        nervousSystemParams = paramsResult.value;
+      }
+
       if (governanceFailed || ledgerFailed) {
         failed.push({ project, governanceFailed, ledgerFailed, error: errorMsg });
       }
@@ -195,6 +203,7 @@ export async function scanPrincipal(
           neurons,
           hasAssets,
           balance: { tokenBalance, neuronsTotal, neuronsOwner, totalValue },
+          nervousSystemParams,
         });
       }
 

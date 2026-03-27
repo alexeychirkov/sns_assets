@@ -195,6 +195,14 @@ export interface ProjectValuation {
   ownerValueIcp: bigint;
 }
 
+// ─── Nervous system parameters ─────────────────────────────────────────────
+
+/** Permission configuration fetched from an SNS governance canister */
+export interface NervousSystemParamsInfo {
+  /** Permissions that can be granted to principals on neurons in this SNS */
+  grantablePermissions: NeuronPermissionType[];
+}
+
 // ─── Results ───────────────────────────────────────────────────────────────
 
 export interface SnsProjectAssets {
@@ -206,6 +214,8 @@ export interface SnsProjectAssets {
   balance: ProjectBalance;
   /** USD / ICP valuation — present after applyValuation() */
   valuation?: ProjectValuation;
+  /** Nervous system parameters from governance canister — absent if fetch failed */
+  nervousSystemParams?: NervousSystemParamsInfo;
 }
 
 /** Result of scanning a principal across all SNS projects */

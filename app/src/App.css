@@ -1014,3 +1014,43 @@ dialog.neuron-modal::backdrop {
   font-size: var(--fs-xxs);
   padding: 1px 5px;
 }
+
+/* ─── Grantable permissions section (SNS card) ───────────────────────────── */
+.grantable-permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+.grantable-perm-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  font-size: var(--fs-xxs);
+  padding: 1px 5px;
+  color: var(--text-muted);
+}
+
+/* ─── Permission coverage section (neuron modal) ─────────────────────────── */
+.perm-coverage-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  padding: 1px 0;
+}
+.perm-coverage-check {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+}
+.perm-check-yes {
+  color: var(--green);
+}
+.perm-check-no {
+  color: var(--text-muted);
+}
+.perm-coverage-name {
+  font-size: var(--fs-xs);
+  color: var(--text);
+}

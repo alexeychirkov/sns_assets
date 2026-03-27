@@ -2,7 +2,13 @@ import type { HttpAgent } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import type { SnsNeuron } from "@dfinity/sns";
 import { SnsGovernanceCanister } from "@dfinity/sns";
-import type { NeuronBalance, NeuronPermission, NeuronState, SnsNeuronInfo } from "./types";
+import type {
+  NeuronBalance,
+  NeuronPermission,
+  NeuronState,
+  NervousSystemParamsInfo,
+  SnsNeuronInfo,
+} from "./types";
 import { NeuronPermissionType } from "./types";
 
 function neuronIdToHex(id: Uint8Array | number[]): string {
@@ -107,4 +113,24 @@ export async function fetchNeurons(
       balance,
     };
   });
+}
+
+/**
+ * Fetch nervous system parameters (specifically grantable permissions) from a
+ * governance canister. Does not require a principal — non-certified query.
+ */
+export async function fetchNervousSystemParameters(
+  governanceCanisterId: string,
+  agent: HttpAgent
+): Promise<NervousSystemParamsInfo> {
+  const canister = SnsGovernanceCanister.create({
+    canisterId: Principal.fromText(governanceCanisterId),
+    agent,
+  });
+  const params = await canister.nervousSystemParameters({ certified: false });
+  return {
+    grantablePermissions: Array.from(
+      params.neuron_grantable_permissions[0]?.permissions ?? []
+    ) as NeuronPermissionType[],
+  };
 }

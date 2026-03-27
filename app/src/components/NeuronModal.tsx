@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { SnsNeuronInfo } from "sns-assets";
+import type { NervousSystemParamsInfo, SnsNeuronInfo } from "sns-assets";
 import { getNeuronPermissionName } from "sns-assets";
 import {
   formatDuration,
@@ -12,6 +12,7 @@ interface Props {
   neuron: SnsNeuronInfo;
   symbol: string;
   decimals: number;
+  nervousSystemParams?: NervousSystemParamsInfo;
   onClose: () => void;
 }
 
@@ -32,7 +33,7 @@ function formatTimestamp(seconds: bigint): string {
   return new Date(ms).toLocaleString();
 }
 
-export function NeuronModal({ neuron, symbol, decimals, onClose }: Props) {
+export function NeuronModal({ neuron, symbol, decimals, nervousSystemParams, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -190,6 +191,24 @@ export function NeuronModal({ neuron, symbol, decimals, onClose }: Props) {
                 </div>
               </div>
             ))}
+          </section>
+        )}
+
+        {/* Permission coverage vs grantable */}
+        {nervousSystemParams && nervousSystemParams.grantablePermissions.length > 0 && (
+          <section className="neuron-modal-section">
+            <div className="neuron-modal-section-title">Coverage (vs grantable)</div>
+            {nervousSystemParams.grantablePermissions.map((pt) => {
+              const hasIt = neuron.permissions.some((p) => p.permission_type.includes(pt));
+              return (
+                <div key={pt} className="perm-coverage-row">
+                  <span className={`perm-coverage-check ${hasIt ? "perm-check-yes" : "perm-check-no"}`}>
+                    {hasIt ? "✓" : "✗"}
+                  </span>
+                  <span className="perm-coverage-name">{getNeuronPermissionName(pt)}</span>
+                </div>
+              );
+            })}
           </section>
         )}
       </div>
