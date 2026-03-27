@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { SnsNeuronInfo, SnsProjectAssets } from "sns-assets";
 import { formatDays, formatTokenAmount, formatUsdE6s } from "../lib/format";
+import { NeuronModal } from "./NeuronModal";
 
 interface Props {
   result: SnsProjectAssets;
@@ -36,6 +37,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
   const symbol = project.tokenSymbol ?? "?";
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [cardOpen, setCardOpen] = useState(false);
+  const [modalNeuron, setModalNeuron] = useState<SnsNeuronInfo | null>(null);
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -189,6 +191,7 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                     project={project}
                     expanded={expanded.has(n.id)}
                     onToggle={() => toggleExpanded(n.id)}
+                    onOpenModal={() => setModalNeuron(n)}
                   />
                 ))}
               </div>
@@ -206,12 +209,21 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
                     project={project}
                     expanded={expanded.has(n.id)}
                     onToggle={() => toggleExpanded(n.id)}
+                    onOpenModal={() => setModalNeuron(n)}
                   />
                 ))}
               </div>
             </div>
           )}
         </div>
+      )}
+      {modalNeuron && (
+        <NeuronModal
+          neuron={modalNeuron}
+          symbol={symbol}
+          decimals={decimals}
+          onClose={() => setModalNeuron(null)}
+        />
       )}
     </div>
   );
@@ -222,9 +234,10 @@ interface NeuronRowProps {
   project: SnsProjectAssets["project"];
   expanded: boolean;
   onToggle: () => void;
+  onOpenModal: () => void;
 }
 
-function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
+function NeuronRow({ neuron: n, project, expanded, onToggle, onOpenModal }: NeuronRowProps) {
   const decimals = project.tokenDecimals ?? 8;
   const symbol = project.tokenSymbol ?? "?";
   return (
@@ -278,6 +291,11 @@ function NeuronRow({ neuron: n, project, expanded, onToggle }: NeuronRowProps) {
       )}
 
       <div className="neuron-more-row">
+        {expanded && (
+          <button className="more-btn neuron-details-btn" onClick={onOpenModal}>
+            details
+          </button>
+        )}
         <button className="more-btn" onClick={onToggle}>
           {expanded ? "less" : "more"}
         </button>

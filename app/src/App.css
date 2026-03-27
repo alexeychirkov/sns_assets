@@ -881,3 +881,136 @@ body {
 .price-sep {
   color: var(--border-light);
 }
+
+/* ─── Neuron details button (shown when expanded) ─────────────────────────── */
+.neuron-details-btn {
+  margin-right: 4px;
+}
+
+/* ─── Neuron modal ────────────────────────────────────────────────────────── */
+dialog.neuron-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  margin: auto;
+  max-height: 80vh;
+  max-width: 560px;
+  overflow: hidden;
+  padding: 0;
+  width: 90vw;
+  display: flex;
+  flex-direction: column;
+}
+dialog.neuron-modal::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+.neuron-modal-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+.neuron-modal-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.neuron-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs);
+  line-height: 1;
+  padding: 2px 4px;
+}
+.neuron-modal-close:hover {
+  color: var(--text);
+}
+.neuron-modal-body {
+  overflow-y: auto;
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.neuron-modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.neuron-modal-section-title {
+  color: var(--text-muted);
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding-bottom: 3px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 2px;
+}
+.neuron-modal-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.neuron-modal-row--total {
+  border-top: 1px solid var(--border-light);
+  margin-top: 3px;
+  padding-top: 3px;
+  font-weight: 700;
+}
+.neuron-modal-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  min-width: 110px;
+}
+.neuron-modal-value {
+  font-size: var(--fs-sm);
+  word-break: break-all;
+}
+.neuron-modal-id {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+/* Badge reuse inside modal */
+.neuron-modal-value.badge {
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  text-transform: uppercase;
+}
+/* Permissions */
+.neuron-modal-permission {
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 3px;
+  padding: 5px 8px;
+}
+.neuron-modal-permission-principal {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  word-break: break-all;
+}
+.neuron-modal-permission-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.neuron-modal-permission-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  font-size: var(--fs-xxs);
+  padding: 1px 5px;
+}
