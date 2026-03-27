@@ -188,6 +188,9 @@ export async function scanPrincipal(
 
       if (paramsResult.status === "fulfilled") {
         nervousSystemParams = paramsResult.value;
+        console.log(`[SNS scan] ${project.name}: params OK`, nervousSystemParams);
+      } else {
+        console.warn(`[SNS scan] ${project.name}: params FAILED`, paramsResult.reason);
       }
 
       if (governanceFailed || ledgerFailed) {

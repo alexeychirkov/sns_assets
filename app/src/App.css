@@ -1054,3 +1054,21 @@ dialog.neuron-modal::backdrop {
   font-size: var(--fs-xs);
   color: var(--text);
 }
+.section-sublabel {
+  font-size: var(--fs-xxs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 5px 0 2px;
+}
+.grantable-perm-tag--claimer {
+  border-style: dashed;
+}
+.perm-coverage-auto {
+  font-size: var(--fs-xxs);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-light);
+  padding: 0 3px;
+  margin-left: 2px;
+}

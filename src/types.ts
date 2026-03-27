@@ -201,6 +201,8 @@ export interface ProjectValuation {
 export interface NervousSystemParamsInfo {
   /** Permissions that can be granted to principals on neurons in this SNS */
   grantablePermissions: NeuronPermissionType[];
+  /** Permissions automatically granted when a neuron is claimed/created */
+  claimerPermissions: NeuronPermissionType[];
 }
 
 // ─── Results ───────────────────────────────────────────────────────────────

@@ -229,6 +229,18 @@ export function SNSCard({ result, showNonOwned, showEmpty }: Props) {
               </span>
             ))}
           </div>
+          {result.nervousSystemParams.claimerPermissions.length > 0 && (
+            <>
+              <div className="section-sublabel">Auto-granted at creation</div>
+              <div className="grantable-permissions">
+                {result.nervousSystemParams.claimerPermissions.map((pt) => (
+                  <span key={pt} className="grantable-perm-tag grantable-perm-tag--claimer">
+                    {getNeuronPermissionName(pt)}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

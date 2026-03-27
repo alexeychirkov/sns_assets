@@ -200,12 +200,16 @@ export function NeuronModal({ neuron, symbol, decimals, nervousSystemParams, onC
             <div className="neuron-modal-section-title">Coverage (vs grantable)</div>
             {nervousSystemParams.grantablePermissions.map((pt) => {
               const hasIt = neuron.permissions.some((p) => p.permission_type.includes(pt));
+              const autoClaimed = nervousSystemParams.claimerPermissions.includes(pt);
               return (
                 <div key={pt} className="perm-coverage-row">
                   <span className={`perm-coverage-check ${hasIt ? "perm-check-yes" : "perm-check-no"}`}>
                     {hasIt ? "✓" : "✗"}
                   </span>
                   <span className="perm-coverage-name">{getNeuronPermissionName(pt)}</span>
+                  {autoClaimed && (
+                    <span className="perm-coverage-auto">auto</span>
+                  )}
                 </div>
               );
             })}

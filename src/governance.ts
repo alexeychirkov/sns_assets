@@ -116,7 +116,7 @@ export async function fetchNeurons(
 }
 
 /**
- * Fetch nervous system parameters (specifically grantable permissions) from a
+ * Fetch nervous system parameters (grantable + claimer permissions) from a
  * governance canister. Does not require a principal — non-certified query.
  */
 export async function fetchNervousSystemParameters(
@@ -128,9 +128,21 @@ export async function fetchNervousSystemParameters(
     agent,
   });
   const params = await canister.nervousSystemParameters({ certified: false });
-  return {
-    grantablePermissions: Array.from(
-      params.neuron_grantable_permissions[0]?.permissions ?? []
-    ) as NeuronPermissionType[],
-  };
+
+  const grantablePermissions = Array.from(
+    params.neuron_grantable_permissions[0]?.permissions ?? []
+  ) as NeuronPermissionType[];
+
+  const claimerPermissions = Array.from(
+    params.neuron_claimer_permissions[0]?.permissions ?? []
+  ) as NeuronPermissionType[];
+
+  console.log(`[SNS params] ${governanceCanisterId.slice(0, 10)}…`, {
+    grantable: grantablePermissions,
+    claimer: claimerPermissions,
+    raw_grantable: params.neuron_grantable_permissions,
+    raw_claimer: params.neuron_claimer_permissions,
+  });
+
+  return { grantablePermissions, claimerPermissions };
 }
