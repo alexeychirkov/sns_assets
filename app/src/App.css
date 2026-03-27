@@ -1072,3 +1072,9 @@ dialog.neuron-modal::backdrop {
   padding: 0 3px;
   margin-left: 2px;
 }
+/* Missing permission tag — strikethrough + dimmed */
+.perm-tag--missing {
+  color: var(--text-muted);
+  opacity: 0.45;
+  text-decoration: line-through;
+}

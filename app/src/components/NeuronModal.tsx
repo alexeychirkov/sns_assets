@@ -173,46 +173,58 @@ export function NeuronModal({ neuron, symbol, decimals, nervousSystemParams, onC
           </section>
         )}
 
-        {/* Permissions */}
+        {/* Permissions — one block per principal, all governance perms shown,
+            missing ones struck through. Falls back to neuron-only list if
+            nervousSystemParams is unavailable. */}
         {neuron.permissions.length > 0 && (
           <section className="neuron-modal-section">
             <div className="neuron-modal-section-title">Permissions</div>
-            {neuron.permissions.map((p, i) => (
-              <div key={i} className="neuron-modal-permission">
-                <div className="neuron-modal-permission-principal">
-                  {p.principal ?? "—"}
-                </div>
-                <div className="neuron-modal-permission-types">
-                  {p.permission_type.map((pt) => (
-                    <span key={pt} className="neuron-modal-permission-tag">
-                      {getNeuronPermissionName(pt)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* Permission coverage vs grantable */}
-        {nervousSystemParams && nervousSystemParams.grantablePermissions.length > 0 && (
-          <section className="neuron-modal-section">
-            <div className="neuron-modal-section-title">Coverage (vs grantable)</div>
-            {nervousSystemParams.grantablePermissions.map((pt) => {
-              const hasIt = neuron.permissions.some((p) => p.permission_type.includes(pt));
-              const autoClaimed = nervousSystemParams.claimerPermissions.includes(pt);
+            {neuron.permissions.map((p, i) => {
+              const allPerms = nervousSystemParams?.grantablePermissions ?? p.permission_type;
               return (
-                <div key={pt} className="perm-coverage-row">
-                  <span className={`perm-coverage-check ${hasIt ? "perm-check-yes" : "perm-check-no"}`}>
-                    {hasIt ? "✓" : "✗"}
-                  </span>
-                  <span className="perm-coverage-name">{getNeuronPermissionName(pt)}</span>
-                  {autoClaimed && (
-                    <span className="perm-coverage-auto">auto</span>
-                  )}
+                <div key={i} className="neuron-modal-permission">
+                  <div className="neuron-modal-permission-principal">
+                    {p.principal ?? "—"}
+                  </div>
+                  <div className="neuron-modal-permission-types">
+                    {allPerms.map((pt) => {
+                      const has = p.permission_type.includes(pt);
+                      return (
+                        <span
+                          key={pt}
+                          className={`neuron-modal-permission-tag${has ? "" : " perm-tag--missing"}`}
+                        >
+                          {getNeuronPermissionName(pt)}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
+          </section>
+        )}
+
+        {/* Coverage — all grantable perms across all principals, missing = strikethrough */}
+        {nervousSystemParams && nervousSystemParams.grantablePermissions.length > 0 && (
+          <section className="neuron-modal-section">
+            <div className="neuron-modal-section-title">Coverage (all principals)</div>
+            <div className="neuron-modal-permission-types">
+              {nervousSystemParams.grantablePermissions.map((pt) => {
+                const hasIt = neuron.permissions.some((p) => p.permission_type.includes(pt));
+                const autoClaimed = nervousSystemParams.claimerPermissions.includes(pt);
+                return (
+                  <span
+                    key={pt}
+                    className={`neuron-modal-permission-tag${hasIt ? "" : " perm-tag--missing"}`}
+                    title={autoClaimed ? "auto-granted at creation" : undefined}
+                  >
+                    {getNeuronPermissionName(pt)}
+                    {autoClaimed && <span className="perm-coverage-auto">↓</span>}
+                  </span>
+                );
+              })}
+            </div>
           </section>
         )}
       </div>
